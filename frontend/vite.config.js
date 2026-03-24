@@ -26,6 +26,9 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: 'http://localhost:8000',
+        // changeOrigin: true rewrites the Host header on the proxied request
+        // to match the target (localhost:8000). Some servers reject requests
+        // whose Host header doesn't match their own address — this prevents that.
         changeOrigin: true,
         // Strip the /api prefix before forwarding.
         // /api/ask → /ask (which FastAPI handles)
