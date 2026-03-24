@@ -67,7 +67,10 @@ describe('trackUsage', () => {
     // This should not throw — errors are silently swallowed inside client.js.
     expect(() => trackUsage('2026-03-23T10:00:00Z')).not.toThrow()
 
-    // Wait a tick and confirm no uncaught rejection either.
+    // Wait a tick for the internal async IIFE to fire.
     await new Promise(r => setTimeout(r, 0))
+
+    // Confirm fetch was actually called (not silently skipped).
+    expect(fetch).toHaveBeenCalled()
   })
 })
