@@ -12,6 +12,16 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
 
+  // esbuild handles JSX for Vitest's internal Vite v7 pipeline.
+  // @vitejs/plugin-react v6 configures OXC (Vite v8's transformer) for
+  // production builds, but Vitest 3 bundles its own Vite v7 which uses
+  // esbuild. This setting ensures JSX in test files uses React 17+'s
+  // automatic runtime (no `import React` needed in every file).
+  esbuild: {
+    jsxImportSource: 'react',
+    jsx: 'automatic',
+  },
+
   server: {
     // The proxy rewrites any request starting with /api
     // to your FastAPI backend running on port 8000.
