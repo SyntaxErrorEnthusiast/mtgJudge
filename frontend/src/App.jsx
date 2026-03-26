@@ -1,121 +1,44 @@
+// App.jsx — the root of the React component tree.
+//
+// This is the top-level component that everything else lives inside.
+// It's intentionally minimal: structural layout only, no business logic.
+//
+// Responsibilities:
+//   1. Render the main chat interface (ChatWindow)
+//   2. Own the open/closed state for the feature request form
+//   3. Conditionally render RequestForm when open
+
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
+import { ChatWindow } from './features/chat/ChatWindow'
+import { RequestForm } from './features/requests/RequestForm'
 import './App.css'
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  // isRequestFormOpen controls whether the RequestForm is currently shown.
+  // false = form is not in the DOM at all (unmounted, not just hidden).
+  // This means every time it opens, it's a fresh component with reset state.
+  const [isRequestFormOpen, setIsRequestFormOpen] = useState(false)
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="app">
+      {/* The main chat interface — always visible */}
+      <ChatWindow />
 
-      <div className="ticks"></div>
+      {/* Button to open the feature request form */}
+      <button
+        className="app__request-button"
+        onClick={() => setIsRequestFormOpen(true)}
+      >
+        Submit Feature Request
+      </button>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+      {/* Conditionally render the form.
+          When isRequestFormOpen is false, this component is fully unmounted —
+          React discards it from the DOM and its state resets automatically.
+          {condition && <Component />} is React's idiomatic conditional render. */}
+      {isRequestFormOpen && (
+        <RequestForm onClose={() => setIsRequestFormOpen(false)} />
+      )}
+    </div>
   )
 }
-
-export default App
