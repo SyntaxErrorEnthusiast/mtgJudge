@@ -21,4 +21,25 @@ describe('useRequests', () => {
     expect(result.current.isSubmitting).toBe(false)
     expect(result.current.error).toBe(false)
   })
+
+  it('sets error to true when submit throws', async () => {
+    const { result } = renderHook(() => useRequests())
+
+    // Temporarily spy on setTimeout to make the stub throw instead of resolving.
+    // We replace the stub behaviour by spying on Promise to force a rejection.
+    // Simplest approach: patch the hook's internal setTimeout via vi.spyOn.
+    vi.spyOn(globalThis, 'setTimeout').mockImplementationOnce((fn) => {
+      throw new Error('simulated failure')
+    })
+
+    await act(async () => {
+      await result.current.submit({ title: 'Test', description: 'Test' })
+    })
+
+    expect(result.current.error).toBe(true)
+    expect(result.current.submitted).toBe(false)
+    expect(result.current.isSubmitting).toBe(false)
+
+    vi.restoreAllMocks()
+  })
 })

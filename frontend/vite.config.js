@@ -12,11 +12,13 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
 
-  // esbuild handles JSX for Vitest's internal Vite v7 pipeline.
-  // @vitejs/plugin-react v6 configures OXC (Vite v8's transformer) for
-  // production builds, but Vitest 3 bundles its own Vite v7 which uses
-  // esbuild. This setting ensures JSX in test files uses React 17+'s
-  // automatic runtime (no `import React` needed in every file).
+  // Why this block exists:
+  // Vitest 3 bundles its own Vite v7 internally for running tests.
+  // The project uses @vitejs/plugin-react v6 (which targets Vite v8),
+  // so Vitest's internal Vite v7 pipeline doesn't pick up the plugin's
+  // Babel JSX configuration. Without this esbuild block, JSX in test
+  // files causes "React is not defined" errors.
+  // This tells esbuild (used by Vitest's Vite v7) how to handle JSX.
   esbuild: {
     jsxImportSource: 'react',
     jsx: 'automatic',

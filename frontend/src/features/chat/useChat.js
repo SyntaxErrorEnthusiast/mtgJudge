@@ -63,6 +63,11 @@ export function useChat() {
     setMessages(prev => [...prev, userMessage])
     setIsLoading(true)
 
+    // Fire usage tracking immediately — we want to record every send attempt,
+    // not just successful ones. trackUsage is fire-and-forget; if it fails,
+    // the error is silently swallowed inside client.js.
+    trackUsage(timestamp)
+
     try {
       // Ask the agent. This awaits the FastAPI response.
       const responseText = await askAgent(text)
@@ -74,11 +79,6 @@ export function useChat() {
         text: responseText,
         timestamp: new Date().toISOString(),
       }])
-
-      // Fire-and-forget usage tracking.
-      // trackUsage does NOT return a Promise we need to await.
-      // If it fails, the error is silently swallowed inside client.js.
-      trackUsage(timestamp)
 
     } catch {
       // If the API call fails, show a friendly error in the chat list
