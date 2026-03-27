@@ -9,6 +9,9 @@
 //   user  → right-aligned, the human's message
 //   agent → left-aligned, the AI's response
 //   error → highlighted, something went wrong
+//
+// We keep the semantic message--{role} classes so CSS rules and tests
+// can target them reliably. Bootstrap utilities then handle spacing.
 
 /**
  * @param {{ role: string, text: string, timestamp: string }} props

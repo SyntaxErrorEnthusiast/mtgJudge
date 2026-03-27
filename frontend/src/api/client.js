@@ -99,13 +99,10 @@ export function trackUsage(timestamp) {
  * @returns {Promise<void>}
  */
 export async function submitRequest(data) {
-  // STUB: Remove this error and uncomment below when backend is ready.
-  throw new Error('submitRequest: /api/requests backend not implemented yet')
-
-  // const response = await fetch(`${BASE_URL}/api/requests`, {
-  //   method: 'POST',
-  //   headers: { 'Content-Type': 'application/json' },
-  //   body: JSON.stringify(data),
-  // })
-  // if (!response.ok) throw new Error(`API error: ${response.status}`)
+  const response = await fetch(`${BASE_URL}/api/requests`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  if (!response.ok) throw new Error(`API error: ${response.status}`)
 }

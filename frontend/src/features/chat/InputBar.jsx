@@ -36,9 +36,13 @@ export function InputBar({ onSend, isLoading }) {
   return (
     // Using <form> + onSubmit means both button clicks AND the Enter key trigger handleSubmit.
     // This is standard HTML behaviour — no extra key listener needed.
-    <form className="input-bar" onSubmit={handleSubmit}>
+    //
+    // Bootstrap classes:
+    //   d-flex gap-2 p-3 border-top — row layout with spacing, padding, and divider line
+    <form className="d-flex gap-2 p-3 border-top" onSubmit={handleSubmit}>
+      {/* form-control is Bootstrap's styled input — handles focus ring, dark theme, etc. */}
       <input
-        className="input-bar__input"
+        className="form-control"
         type="text"
         value={inputText}
         onChange={e => setInputText(e.target.value)}
@@ -46,8 +50,11 @@ export function InputBar({ onSend, isLoading }) {
         disabled={isLoading}
         aria-label="Message input"
       />
+
+      {/* btn btn-warning = Bootstrap's amber/gold button — matches the MTG gold theme.
+          fw-bold makes the label heavier so it reads well on the amber background. */}
       <button
-        className="input-bar__button"
+        className="btn btn-warning fw-bold"
         type="submit"
         // Disabled when loading (waiting for response) OR when input is blank.
         disabled={isLoading || !inputText.trim()}

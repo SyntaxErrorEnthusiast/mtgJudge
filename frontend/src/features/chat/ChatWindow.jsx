@@ -21,11 +21,21 @@ export function ChatWindow() {
   const { messages, isLoading, sendMessage } = useChat()
 
   return (
-    <div className="chat-window">
-      <header className="chat-window__header">
-        <h1>MTG Judge</h1>
-        <p>Ask rules questions about Magic: The Gathering</p>
-      </header>
+    // Bootstrap card gives us the bordered, rounded container.
+    // flex-grow-1   — expand to fill remaining height in the App flex column
+    // d-flex flex-column — stack header / message list / input bar vertically
+    // overflow-hidden — clip any overflow so the inner scroll works correctly
+    <div className="card flex-grow-1 d-flex flex-column overflow-hidden">
+      {/* card-header styles the top strip.
+          border-warning adds the gold accent line under the header. */}
+      <div className="card-header border-warning">
+        {/* text-warning is Bootstrap's amber/gold colour — fits the MTG theme.
+            fw-bold makes it heavy; mb-0 removes the default h5 bottom margin. */}
+        <h5 className="mb-0 fw-bold text-warning">⚔ MTG Judge</h5>
+        <p className="mb-0 mt-1 small text-secondary">
+          Ask rules questions about Magic: The Gathering
+        </p>
+      </div>
 
       {/* MessageList renders the conversation history */}
       <MessageList messages={messages} />

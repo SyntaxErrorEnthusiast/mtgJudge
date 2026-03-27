@@ -6,6 +6,10 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
+// Bootstrap's compiled CSS — this gives us the full design system:
+// grid, utilities (d-flex, p-3, text-warning, etc.), components (card, btn, modal).
+// Importing from the npm package means Vite bundles it with the rest of the app.
+import 'bootstrap/dist/css/bootstrap.min.css'
 import './index.css'
 
 // ReactDOM.createRoot() creates a React "root" — a managed DOM subtree.

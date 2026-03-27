@@ -20,13 +20,20 @@ export default function App() {
   const [isRequestFormOpen, setIsRequestFormOpen] = useState(false)
 
   return (
-    <div className="app">
+    // .app caps the max-width (see App.css). Bootstrap utilities handle the rest:
+    //   d-flex flex-column — vertical stack
+    //   vh-100             — fill the full viewport height
+    //   mx-auto            — centre horizontally
+    //   px-3 py-3 gap-2    — padding and spacing between children
+    <div className="app d-flex flex-column vh-100 mx-auto px-3 py-3 gap-2">
       {/* The main chat interface — always visible */}
       <ChatWindow />
 
-      {/* Button to open the feature request form */}
+      {/* Button to open the feature request form.
+          align-self-end pushes it to the right edge of the flex column.
+          btn-outline-secondary gives a subtle look that doesn't compete with Send. */}
       <button
-        className="app__request-button"
+        className="btn btn-outline-secondary btn-sm align-self-end"
         onClick={() => setIsRequestFormOpen(true)}
       >
         Submit Feature Request

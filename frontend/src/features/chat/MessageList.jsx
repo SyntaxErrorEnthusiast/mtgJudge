@@ -48,7 +48,10 @@ export function MessageList({ messages }) {
   }, [messages]) // Re-run whenever messages changes (new message added)
 
   return (
-    <div className="message-list" ref={listRef}>
+    // message-list handles overflow-y scroll and flex layout (see index.css).
+    // flex-grow-1 (Bootstrap) makes it expand to fill the card's remaining space
+    // between the header and the input bar.
+    <div className="message-list flex-grow-1" ref={listRef}>
       {/* Map each message to a Message component.
           key={msg.id} is required by React to efficiently update the list.
           Using the message's unique ID as the key is correct — don't use index. */}

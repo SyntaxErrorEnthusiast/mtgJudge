@@ -37,7 +37,7 @@ export default defineConfig({
     // come from the same origin (localhost:5173).
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'http://127.0.0.1:8000',
         // changeOrigin: true rewrites the Host header on the proxied request
         // to match the target (localhost:8000). Some servers reject requests
         // whose Host header doesn't match their own address — this prevents that.

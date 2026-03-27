@@ -1,31 +1,84 @@
-/* index.css — global base styles.
-   These apply to the entire page.
-   Styling is minimal for now — functionality first. */
+/* index.css — chat-specific styles that Bootstrap doesn't cover.
+ *
+ * Bootstrap handles: layout utilities, typography, buttons, forms, card,
+ *   colors, dark theme, spacing, borders, shadows.
+ *
+ * This file handles: the scrollable message list, message bubble shapes
+ *   and colors, and the timestamp label — things unique to a chat UI.
+ */
 
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+/* ─── Message List ───────────────────────────────────────────────── */
+/* The message list needs to grow to fill the card and scroll internally.
+ * flex-grow-1 (added in JSX) handles the growth; this rule handles the scroll. */
+
+.message-list {
+  overflow-y: auto;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  /* Style the scrollbar to be thin and match the dark theme */
+  scrollbar-width: thin;
+  scrollbar-color: #495057 transparent;
 }
 
-body {
-  font-family: system-ui, sans-serif;
-  background: #fff;
-  color: #111;
+.message-list::-webkit-scrollbar { width: 6px; }
+.message-list::-webkit-scrollbar-track { background: transparent; }
+.message-list::-webkit-scrollbar-thumb { background: #495057; border-radius: 3px; }
+
+/* ─── Individual Message ─────────────────────────────────────────── */
+
+.message {
+  display: flex;
+  flex-direction: column;
+  max-width: 75%;
 }
 
-/* Placeholder classes used by components — add real styles later */
-.chat-window         { display: flex; flex-direction: column; flex: 1; }
-.chat-window__header { padding: 0.5rem 0; border-bottom: 1px solid #ddd; }
-.message-list        { flex: 1; overflow-y: auto; padding: 1rem 0; }
-.message             { margin-bottom: 0.75rem; }
-.message--user       { text-align: right; }
-.message--agent      { text-align: left; }
-.message--error      { color: red; }
-.message__time       { font-size: 0.75rem; color: #888; display: block; }
-.input-bar           { display: flex; gap: 0.5rem; padding: 0.5rem 0; }
-.input-bar__input    { flex: 1; padding: 0.5rem; }
-.request-form-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; }
-.request-form        { background: white; padding: 2rem; border-radius: 8px; min-width: 400px; display: flex; flex-direction: column; gap: 0.75rem; }
-.request-form__error  { color: red; }
-.request-form__success { color: green; }
+/* Alignment by role — user bubbles sit on the right, agent on the left */
+.message--user  { align-self: flex-end;   align-items: flex-end;   }
+.message--agent { align-self: flex-start; align-items: flex-start; }
+.message--error { align-self: center;     align-items: center;     }
+
+/* ─── Message Bubble ─────────────────────────────────────────────── */
+
+.message__text {
+  padding: 0.6rem 0.9rem;
+  border-radius: 12px;
+  line-height: 1.5;
+  font-size: 0.92rem;
+  word-break: break-word;
+  margin: 0; /* Reset browser default <p> margin */
+}
+
+/* User bubble: Bootstrap primary blue, one corner flattened to look like a speech bubble */
+.message--user .message__text {
+  background: #0d6efd;
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+
+/* Agent bubble: dark surface with a subtle border */
+.message--agent .message__text {
+  background: #2b2d42;
+  color: #f0f0f0;
+  border-bottom-left-radius: 4px;
+  border: 1px solid #495057;
+}
+
+/* Error bubble: muted red to stand out without being alarming */
+.message--error .message__text {
+  background: #2d1b1b;
+  color: #f08080;
+  border: 1px solid #7a2a2a;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+/* ─── Timestamp ──────────────────────────────────────────────────── */
+
+.message__time {
+  font-size: 0.68rem;
+  color: #6c757d; /* Bootstrap's text-muted color */
+  margin-top: 0.25rem;
+  padding: 0 0.25rem;
+}

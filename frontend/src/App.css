@@ -1,17 +1,10 @@
-/* App.css — top-level layout styles.
-   Styling is minimal for now — functionality first.
-   Replace this with real styles when you're ready to polish the UI. */
+/* App.css — top-level layout overrides.
+ *
+ * Bootstrap's vh-100 and d-flex flex-column (set in JSX) handle the layout.
+ * This file only sets the max-width cap so the app doesn't stretch too wide
+ * on large monitors — a style detail that Bootstrap doesn't have a utility for.
+ */
 
 .app {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 1rem;
-}
-
-.app__request-button {
-  margin-top: 0.5rem;
-  align-self: flex-end;
+  max-width: 860px;
 }

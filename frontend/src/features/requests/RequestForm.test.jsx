@@ -2,14 +2,18 @@
 //
 // waitFor() retries the assertion until it passes or times out.
 // We use it for async state changes (like the success message appearing
-// after the 500ms stub delay).
+// after the API call resolves).
 
-import { describe, it, expect, vi } from 'vitest'
+import { beforeEach, describe, it, expect, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { RequestForm } from './RequestForm'
 
 describe('RequestForm', () => {
+  beforeEach(() => {
+    // Mock fetch so form submission doesn't make real HTTP requests in tests.
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, status: 204 })
+  })
   it('renders title and description fields', () => {
     render(<RequestForm onClose={vi.fn()} />)
     expect(screen.getByLabelText('Title')).toBeInTheDocument()
