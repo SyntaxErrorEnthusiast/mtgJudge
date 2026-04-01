@@ -19,6 +19,7 @@ import os
 import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
+from natsort import natsorted
 from pydantic import BaseModel
 
 from agent.graph import run_agent
@@ -155,6 +156,27 @@ async def submit_request(body: RequestBody):
             raise HTTPException(status_code=502, detail=f"Discord error {resp.status_code}: {resp.text}")
 
     logger.info("requests: feature request delivered to Discord successfully")
+
+
+def _get_rules_collection():
+    import chromadb as _chromadb
+    client = _chromadb.PersistentClient(path="data/chroma_db")
+    return client.get_collection("mtg_rules")
+
+
+@app.get("/rules")
+def get_all_rules():
+    """Return all MTG rules sorted by rule number."""
+    collection = _get_rules_collection()
+    result = collection.get(
+        include=["metadatas"],
+        limit=collection.count(),
+    )
+    rules = [
+        {"rule_number": meta["rule_number"], "text": meta["text"]}
+        for meta in result["metadatas"]
+    ]
+    return natsorted(rules, key=lambda r: r["rule_number"])
 
 
 if __name__ == "__main__":
