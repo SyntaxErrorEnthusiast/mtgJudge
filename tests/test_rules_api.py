@@ -28,3 +28,20 @@ def test_get_rules_sorted_naturally():
     numbers = [r["rule_number"] for r in data]
     # The returned order should equal what natsorted produces
     assert numbers == natsorted(numbers)
+
+
+def test_get_rule_by_number_found():
+    # Fetch all rules first to get a valid rule number
+    all_rules = client.get("/rules").json()
+    valid_number = all_rules[10]["rule_number"]  # pick one that exists
+
+    response = client.get(f"/rules/{valid_number}")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["rule_number"].lower() == valid_number.lower()
+    assert "text" in data
+
+
+def test_get_rule_by_number_not_found():
+    response = client.get("/rules/999.99z")
+    assert response.status_code == 404
