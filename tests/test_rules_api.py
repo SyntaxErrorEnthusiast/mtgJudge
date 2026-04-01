@@ -22,9 +22,9 @@ def test_get_rules_items_have_required_fields():
 
 
 def test_get_rules_sorted_naturally():
+    from natsort import natsorted
     response = client.get("/rules")
     data = response.json()
     numbers = [r["rule_number"] for r in data]
-    # 100. should appear before 100.1, which appears before 100.2, which before 100.10
-    if "100." in numbers and "100.1" in numbers:
-        assert numbers.index("100.") < numbers.index("100.1")
+    # The returned order should equal what natsorted produces
+    assert numbers == natsorted(numbers)
