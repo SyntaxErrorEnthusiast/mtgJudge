@@ -76,3 +76,22 @@ def test_no_citations_no_cards_returns_empty_string():
     draft = "The creature dies."
     result = _build_sources_block(draft, {"rules": SAMPLE_RULES, "cards": []})
     assert result == ""
+
+
+def test_clarifying_question_path_no_sources_block():
+    # Feature: mtg-judge-agent, Property 8: Clarifying question path → no Sources block appended
+    from agent.state import AgentState
+    from langchain_core.messages import HumanMessage
+    state = AgentState(
+        messages=[HumanMessage(content="What happens?")],
+        intent="unclear",
+        pending_response="Could you clarify which cards are involved?",
+        retrieved_context={"rules": SAMPLE_RULES, "cards": SAMPLE_CARDS},
+        turn_count=0,
+        draft_answer="",
+    )
+    from agent.nodes.respond import respond
+    result = respond(state)
+    content = result["messages"][0].content
+    assert "## Sources" not in content
+    assert content == "Could you clarify which cards are involved?"
