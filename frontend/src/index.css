@@ -82,3 +82,37 @@
   margin-top: 0.25rem;
   padding: 0 0.25rem;
 }
+
+/* ─── Markdown content inside agent bubbles ─────────────────────── */
+/* react-markdown wraps prose in <p> tags; the existing margin:0 reset on
+   .message__text collapses them. Restore vertical breathing room. */
+
+.message--agent .message__text p {
+  margin-bottom: 0.6rem;
+}
+.message--agent .message__text p:last-child {
+  margin-bottom: 0;
+}
+
+/* ## Sources header */
+.message--agent .message__text h2 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #adb5bd;
+  margin-top: 1rem;
+  margin-bottom: 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: none;
+}
+
+/* Source list */
+.message--agent .message__text ul {
+  padding-left: 1rem;
+  margin-bottom: 0;
+}
+.message--agent .message__text li {
+  margin-bottom: 0.4rem;
+  font-size: 0.85rem;
+  color: #adb5bd;
+}
