@@ -22,9 +22,9 @@ describe('MessageList', () => {
   })
 
   it('renders messages in order', () => {
-    render(<MessageList messages={MESSAGES} />)
-    const texts = screen.getAllByRole('paragraph').map(el => el.textContent)
-    expect(texts[0]).toBe('Hello')
-    expect(texts[1]).toBe('Hi there')
+    const { container } = render(<MessageList messages={MESSAGES} />)
+    const bubbles = container.querySelectorAll('.message__text')
+    expect(bubbles[0].textContent).toBe('Hello')
+    expect(bubbles[1].textContent).toBe('Hi there')
   })
 })
