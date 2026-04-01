@@ -34,7 +34,7 @@ Answer using ONLY the retrieved context provided. Do not use outside knowledge.
 
 
 def _get_llm() -> ChatAnthropic:
-    return ChatAnthropic(model="claude-sonnet-4-5", temperature=0, max_tokens=1024)
+    return ChatAnthropic(model="claude-sonnet-4-6", temperature=0, max_tokens=1024)
 
 
 # ---------------------------------------------------------------------------

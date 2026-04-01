@@ -68,7 +68,7 @@ Entity extraction:
 
 
 def _get_llm() -> ChatAnthropic:
-    return ChatAnthropic(model="claude-sonnet-4-5", temperature=0, max_tokens=512)
+    return ChatAnthropic(model="claude-sonnet-4-6", temperature=0, max_tokens=512)
 
 
 # ---------------------------------------------------------------------------
