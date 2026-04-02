@@ -19,7 +19,11 @@ data/
 # IDE
 .vscode/
 .idea/
+.hypothesis/
+.kiro/
+
 
 # Claude Code internal files
 .claude/
+.superpowers/
 %USERPROFILE%/
