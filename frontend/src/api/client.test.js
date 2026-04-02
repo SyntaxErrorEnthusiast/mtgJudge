@@ -14,11 +14,11 @@ describe('askAgent', () => {
     vi.restoreAllMocks()
   })
 
-  it('POSTs the message and returns the response string', async () => {
+  it('POSTs the message and returns the response object', async () => {
     // mockResolvedValue makes fetch() return a resolved Promise with this value.
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ response: 'You can respond to a spell.' }),
+      json: async () => ({ response: 'You can respond to a spell.', retrieved_rules: [] }),
     })
 
     const result = await askAgent('Can I respond to a spell?')
@@ -26,9 +26,9 @@ describe('askAgent', () => {
     expect(fetch).toHaveBeenCalledWith('/api/ask', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: 'Can I respond to a spell?' }),
+      body: JSON.stringify({ message: 'Can I respond to a spell?', format: 'commander', history: [] }),
     })
-    expect(result).toBe('You can respond to a spell.')
+    expect(result).toEqual({ response: 'You can respond to a spell.', retrieved_rules: [] })
   })
 
   it('throws when the response is not ok', async () => {

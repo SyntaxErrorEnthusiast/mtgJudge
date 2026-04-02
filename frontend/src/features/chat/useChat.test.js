@@ -26,7 +26,7 @@ describe('useChat', () => {
   })
 
   it('adds user message to messages immediately on sendMessage', async () => {
-    vi.spyOn(client, 'askAgent').mockResolvedValue('The agent response')
+    vi.spyOn(client, 'askAgent').mockResolvedValue({ response: 'The agent response', retrieved_rules: [] })
     vi.spyOn(client, 'trackUsage').mockImplementation(() => {})
 
     const { result } = renderHook(() => useChat())
@@ -42,7 +42,7 @@ describe('useChat', () => {
   })
 
   it('appends agent response as second message after success', async () => {
-    vi.spyOn(client, 'askAgent').mockResolvedValue('Yes, during priority.')
+    vi.spyOn(client, 'askAgent').mockResolvedValue({ response: 'Yes, during priority.', retrieved_rules: [] })
     vi.spyOn(client, 'trackUsage').mockImplementation(() => {})
 
     const { result } = renderHook(() => useChat())
@@ -74,7 +74,7 @@ describe('useChat', () => {
   })
 
   it('resets isLoading to false after completion', async () => {
-    vi.spyOn(client, 'askAgent').mockResolvedValue('answer')
+    vi.spyOn(client, 'askAgent').mockResolvedValue({ response: 'answer', retrieved_rules: [] })
     vi.spyOn(client, 'trackUsage').mockImplementation(() => {})
 
     const { result } = renderHook(() => useChat())
@@ -100,7 +100,7 @@ describe('useChat', () => {
   })
 
   it('calls trackUsage with the pre-send timestamp', async () => {
-    vi.spyOn(client, 'askAgent').mockResolvedValue('ok')
+    vi.spyOn(client, 'askAgent').mockResolvedValue({ response: 'ok', retrieved_rules: [] })
     const mockTrack = vi.spyOn(client, 'trackUsage').mockImplementation(() => {})
 
     const { result } = renderHook(() => useChat())

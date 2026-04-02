@@ -20,7 +20,7 @@ describe('ChatWindow', () => {
   })
 
   it('shows user message in the chat after submitting', async () => {
-    vi.spyOn(client, 'askAgent').mockResolvedValue('You can respond.')
+    vi.spyOn(client, 'askAgent').mockResolvedValue({ response: 'You can respond.', retrieved_rules: [] })
     vi.spyOn(client, 'trackUsage').mockImplementation(() => {})
 
     render(<ChatWindow />)
@@ -32,7 +32,7 @@ describe('ChatWindow', () => {
   })
 
   it('shows agent response after the API resolves', async () => {
-    vi.spyOn(client, 'askAgent').mockResolvedValue('Yes, you can.')
+    vi.spyOn(client, 'askAgent').mockResolvedValue({ response: 'Yes, you can.', retrieved_rules: [] })
     vi.spyOn(client, 'trackUsage').mockImplementation(() => {})
 
     render(<ChatWindow />)

@@ -16,31 +16,27 @@ const BASE_URL = ''
 /**
  * POST /api/ask
  *
- * Sends the user's message to the LangGraph agent and returns the text response.
- *
- * @param {string} message - The user's rules question
- * @returns {Promise<string>} - The agent's answer
- * @throws {Error} - If the server returns a non-2xx status
+ * @param {string} message
+ * @param {string} format
+ * @param {Array<{role: string, content: string}>} history
+ * @returns {Promise<{response: string, retrieved_rules: Array<{rule_number: string, text: string}>}>}
  */
-export async function askAgent(message) {
+export async function askAgent(message, format = 'commander', history = []) {
   const response = await fetch(`${BASE_URL}/api/ask`, {
     method: 'POST',
-    // Content-Type: application/json tells the server we're sending JSON.
-    // Without this header, FastAPI won't parse the body correctly.
     headers: { 'Content-Type': 'application/json' },
-    // JSON.stringify() converts the JS object to a JSON string for the request body.
-    body: JSON.stringify({ message }),
+    body: JSON.stringify({ message, format, history }),
   })
 
   if (!response.ok) {
-    // response.ok is true for 2xx status codes.
-    // We throw here so callers can catch and handle errors in one place.
     throw new Error(`API error: ${response.status}`)
   }
 
-  // response.json() parses the JSON response body into a JS object.
   const data = await response.json()
-  return data.response
+  return {
+    response: data.response,
+    retrieved_rules: data.retrieved_rules ?? [],
+  }
 }
 
 // ---------------------------------------------------------------------------
