@@ -1,0 +1,31 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      # Persist ChromaDB, SQLite cache, and rules hash across restarts
+      - mtg_data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s   # allow time for initial indexing
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3000:80"           # access the app at http://your-nas-ip:3000
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  mtg_data:
+    driver: local
