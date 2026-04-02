@@ -5,7 +5,7 @@
 // Panel is CSS-hidden (not unmounted) to preserve scroll position.
 // Use getElementById() for scroll — not querySelector() (dots in ids break CSS selectors).
 
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 
 /**
  * @param {{
@@ -16,8 +16,6 @@ import { useEffect, useRef } from 'react'
  * }} props
  */
 export function RulesPanel({ rules, activeRule, isOpen, onToggle }) {
-  const panelRef = useRef(null)
-
   // Scroll to and highlight the active rule when it changes
   useEffect(() => {
     if (!activeRule || !isOpen) return
@@ -56,7 +54,6 @@ export function RulesPanel({ rules, activeRule, isOpen, onToggle }) {
 
       {/* Panel — CSS-hidden when closed, not unmounted */}
       <div
-        ref={panelRef}
         className={`rules-panel ${isOpen ? 'rules-panel--open' : ''}`}
         aria-hidden={!isOpen}
       >
