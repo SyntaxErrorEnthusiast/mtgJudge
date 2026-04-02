@@ -2,6 +2,8 @@ langgraph
 langchain-anthropic
 langchain-community
 langchain-core
+voyageai
+langchain-voyageai
 chromadb
 fastapi
 uvicorn
