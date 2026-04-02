@@ -1,4 +1,5 @@
 # tests/test_rules_api.py
+import pytest
 from fastapi.testclient import TestClient
 from api.main import app
 
@@ -49,3 +50,30 @@ def test_get_chapter_rule_with_trailing_dot():
     assert response.status_code == 200
     data = response.json()
     assert data["rule_number"] == "100."
+
+
+@pytest.mark.integration  # requires live ANTHROPIC_API_KEY + running ChromaDB
+def test_ask_response_includes_retrieved_rules():
+    response = client.post("/ask", json={
+        "message": "What is a token?",
+        "format": "commander",
+        "history": []
+    })
+    assert response.status_code == 200
+    data = response.json()
+    assert "response" in data
+    assert "retrieved_rules" in data
+    assert isinstance(data["retrieved_rules"], list)
+
+
+@pytest.mark.integration
+def test_ask_clarifying_returns_empty_retrieved_rules():
+    response = client.post("/ask", json={
+        "message": "huh?",
+        "format": "commander",
+        "history": []
+    })
+    assert response.status_code == 200
+    data = response.json()
+    assert "retrieved_rules" in data
+    assert isinstance(data["retrieved_rules"], list)

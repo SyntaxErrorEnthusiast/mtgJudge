@@ -22,7 +22,7 @@ from fastapi import FastAPI, HTTPException
 from natsort import natsorted
 from pydantic import BaseModel
 
-from agent.graph import run_agent
+from agent.graph import compiled_graph
 
 load_dotenv()
 
@@ -54,6 +54,8 @@ app = FastAPI(
 
 class AskRequest(BaseModel):
     message: str  # The user's question
+    format: str = "commander"
+    history: list = []
 
     # Example shows up in /docs — helps you and others test the API quickly.
     model_config = {
@@ -64,7 +66,8 @@ class AskRequest(BaseModel):
 
 
 class AskResponse(BaseModel):
-    response: str  # The agent's answer
+    response: str
+    retrieved_rules: list[dict] = []
 
 
 class RequestBody(BaseModel):
@@ -103,13 +106,34 @@ def ask(request: AskRequest) -> AskResponse:
 
     logger.info("ask: received message (length=%d)", len(request.message))
     try:
-        answer = run_agent(request.message)
+        from langchain_core.messages import HumanMessage
+
+        final_state = compiled_graph.invoke(
+            {
+                "messages": [HumanMessage(content=request.message)],
+                "format": request.format,
+                "turn_count": 0,
+                "review_retry_count": 0,
+                "intent": "",
+                "card_names": [],
+                "rule_references": [],
+                "pending_response": None,
+                "retrieved_context": {},
+                "draft_answer": None,
+                "self_review_status": None,
+            }
+        )
+        answer = final_state["messages"][-1].content
         logger.info("ask: agent responded successfully")
     except Exception as e:
         logger.exception("ask: agent raised an exception")
         raise HTTPException(status_code=500, detail=f"Agent error: {str(e)}")
 
-    return AskResponse(response=answer)
+    retrieved_rules = [
+        {"rule_number": r["rule_number"], "text": r["text"]}
+        for r in final_state.get("retrieved_context", {}).get("rules", [])
+    ]
+    return AskResponse(response=answer, retrieved_rules=retrieved_rules)
 
 
 # ---------------------------------------------------------------------------
