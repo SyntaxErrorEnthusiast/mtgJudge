@@ -49,6 +49,12 @@ def index_chunks(chunks: list[RuleChunk]) -> None:
         metadata={"hnsw:space": "cosine"},
     )
 
+    # Deduplicate by rule_number — keep last occurrence so body text wins over TOC entries
+    seen: dict[str, RuleChunk] = {}
+    for chunk in chunks:
+        seen[chunk.rule_number] = chunk
+    chunks = list(seen.values())
+
     texts = [chunk.text for chunk in chunks]
     ids = [chunk.rule_number for chunk in chunks]
     metadatas = [{"rule_number": chunk.rule_number, "text": chunk.text} for chunk in chunks]
@@ -83,8 +89,8 @@ def index_chunks(chunks: list[RuleChunk]) -> None:
         metadata={"hnsw:space": "cosine"},
     )
 
-    # Copy data from temp to final
-    result = new_collection.get(include=["embeddings", "metadatas"])
+    # Copy data from temp to final — pass limit=count() to avoid ChromaDB's default 100 truncation
+    result = new_collection.get(include=["embeddings", "metadatas"], limit=new_collection.count())
     if result["ids"]:
         final_collection.add(
             ids=result["ids"],
