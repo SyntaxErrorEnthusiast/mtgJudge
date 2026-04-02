@@ -13,6 +13,7 @@ export function RulesPage() {
   const [rules, setRules] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [copiedId, setCopiedId] = useState(null)
 
   useEffect(() => {
     getRules()
@@ -25,6 +26,14 @@ export function RulesPage() {
         setLoading(false)
       })
   }, [])
+
+  function copyRuleLink(ruleNumber) {
+    const url = `${window.location.origin}/rules#${ruleNumber}`
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedId(ruleNumber)
+      setTimeout(() => setCopiedId(null), 1500)
+    })
+  }
 
   if (loading) {
     return (
@@ -53,7 +62,17 @@ export function RulesPage() {
             id={rule.rule_number}
             className="rules-page__rule"
           >
-            <h3 className="rules-page__rule-number">{rule.rule_number}</h3>
+            <div className="rules-page__rule-header">
+              <h3 className="rules-page__rule-number">{rule.rule_number}</h3>
+              <button
+                className="rules-page__copy-btn"
+                onClick={() => copyRuleLink(rule.rule_number)}
+                aria-label={`Copy link to rule ${rule.rule_number}`}
+                title="Copy link"
+              >
+                {copiedId === rule.rule_number ? '✓' : '🔗'}
+              </button>
+            </div>
             <p className="rules-page__rule-text">{rule.text}</p>
           </div>
         ))}

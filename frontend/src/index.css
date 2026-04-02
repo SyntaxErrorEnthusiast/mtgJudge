@@ -153,11 +153,39 @@
   padding-bottom: 1rem;
 }
 
+.rules-page__rule-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .rules-page__rule-number {
   font-size: 0.9rem;
   font-weight: 700;
   color: #ffc107;
   margin-bottom: 0.25rem;
+}
+
+.rules-page__copy-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+  color: #6c757d;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+  line-height: 1;
+}
+
+.rules-page__rule:hover .rules-page__copy-btn {
+  opacity: 1;
+}
+
+.rules-page__copy-btn:hover {
+  color: #ffc107;
+  background: rgba(255, 193, 7, 0.1);
 }
 
 .rules-page__rule-text {
