@@ -118,4 +118,40 @@ describe('useChat', () => {
     expect(calledWith >= before).toBe(true)
     expect(calledWith <= after).toBe(true)
   })
+
+  it('populates currentRetrievedRules after a successful response', async () => {
+    const mockRules = [{ rule_number: '100.1', text: 'The game begins.' }]
+    vi.spyOn(client, 'askAgent').mockResolvedValueOnce({ response: 'Test answer.', retrieved_rules: mockRules })
+    vi.spyOn(client, 'trackUsage').mockImplementation(() => {})
+
+    const { result } = renderHook(() => useChat())
+    await act(async () => {
+      result.current.sendMessage('test question')
+    })
+
+    expect(result.current.currentRetrievedRules).toEqual(mockRules)
+  })
+
+  it('resets currentRetrievedRules to [] when a new message is sent', async () => {
+    const mockRules = [{ rule_number: '100.1', text: 'The game begins.' }]
+    vi.spyOn(client, 'askAgent').mockResolvedValue({ response: 'Test answer.', retrieved_rules: mockRules })
+    vi.spyOn(client, 'trackUsage').mockImplementation(() => {})
+
+    const { result } = renderHook(() => useChat())
+
+    // First send — populates rules
+    await act(async () => {
+      result.current.sendMessage('first question')
+    })
+    expect(result.current.currentRetrievedRules).toEqual(mockRules)
+
+    // Start second send — rules should be reset immediately (check isLoading=true state)
+    vi.spyOn(client, 'askAgent').mockImplementationOnce(() => new Promise(() => {})) // never resolves
+    await act(async () => {
+      result.current.sendMessage('second question')
+    })
+    // After sending, while loading, rules are empty
+    expect(result.current.isLoading).toBe(true)
+    expect(result.current.currentRetrievedRules).toEqual([])
+  })
 })

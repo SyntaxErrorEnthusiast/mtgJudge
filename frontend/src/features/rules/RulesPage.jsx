@@ -7,6 +7,7 @@
 // id attributes break CSS selector syntax.
 
 import { useState, useEffect } from 'react'
+import { getRules } from '../../api/client'
 
 export function RulesPage() {
   const [rules, setRules] = useState([])
@@ -14,11 +15,7 @@ export function RulesPage() {
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    fetch('/api/rules')
-      .then(res => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        return res.json()
-      })
+    getRules()
       .then(data => {
         setRules(data)
         setLoading(false)

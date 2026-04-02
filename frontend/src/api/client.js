@@ -40,6 +40,22 @@ export async function askAgent(message, format = 'commander', history = []) {
 }
 
 // ---------------------------------------------------------------------------
+// getRules — fetch all MTG rules from the backend
+// ---------------------------------------------------------------------------
+
+/**
+ * GET /api/rules
+ * @returns {Promise<Array<{rule_number: string, text: string}>>}
+ */
+export async function getRules() {
+  const response = await fetch(`${BASE_URL}/api/rules`)
+  if (!response.ok) {
+    throw new Error(`API error: ${response.status}`)
+  }
+  return response.json()
+}
+
+// ---------------------------------------------------------------------------
 // trackUsage — fire-and-forget usage ping
 // ---------------------------------------------------------------------------
 

@@ -192,9 +192,10 @@ def _get_rules_collection():
 def get_all_rules():
     """Return all MTG rules sorted by rule number."""
     collection = _get_rules_collection()
+    count = collection.count()
     result = collection.get(
         include=["metadatas"],
-        limit=collection.count(),
+        limit=count,
     )
     rules = [
         {"rule_number": meta["rule_number"], "text": meta["text"]}
@@ -207,7 +208,8 @@ def get_all_rules():
 def get_rule_by_number(rule_number: str):
     """Return a single rule by rule_number. Case-insensitive, strips whitespace."""
     collection = _get_rules_collection()
-    result = collection.get(include=["metadatas"], limit=collection.count())
+    count = collection.count()
+    result = collection.get(include=["metadatas"], limit=count)
     target = rule_number.strip().lower()
     for meta in result["metadatas"]:
         if meta["rule_number"].strip().lower() == target:
