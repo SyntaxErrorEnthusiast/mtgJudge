@@ -306,3 +306,104 @@ The chat interface also includes a collapsible rules panel that shows the rules 
 | `EMBEDDING_MODEL` | No | `voyage-3` | Voyage AI model name |
 | `ADMIN_SECRET` | No | — | Secret key for `POST /admin/refresh-rules` |
 | `DISCORD_WEBHOOK_URL` | No | — | Discord webhook for feature request submissions |
+
+---
+
+## Docker deployment (NAS / self-hosted)
+
+The project ships with a `docker-compose.yml` that builds and runs two containers:
+
+| Container | What it does |
+|---|---|
+| `backend` | FastAPI + LangGraph agent. On first start, automatically downloads the MTG rules, embeds them via Voyage AI, and indexes them into ChromaDB. |
+| `frontend` | React app built with Vite, served by Nginx. Proxies `/api/*` to the backend. |
+
+Data (ChromaDB, Scryfall SQLite cache, rules hash) is stored in a named Docker volume so it persists across restarts and container rebuilds.
+
+### Prerequisites
+
+- Docker and Docker Compose installed on your NAS
+- Your `.env` file with `ANTHROPIC_API_KEY` and `VOYAGE_API_KEY` set
+
+### Build and start
+
+```bash
+# From the project root
+docker compose up --build -d
+```
+
+The first start will take a few minutes — the backend runs the full rules download and vectorization before accepting requests. The frontend won't start until the backend passes its health check.
+
+Once running, open `http://your-nas-ip:3000` in your browser.
+
+### What happens on first boot
+
+1. The backend container starts and checks for `data/rules_hash.txt`
+2. If missing, it runs `scripts/refresh_rules.py` which:
+   - Downloads the MTG comprehensive rules TXT from Wizards of the Coast
+   - Parses it into ~20,000 rule chunks
+   - Embeds all chunks via Voyage AI (`voyage-3`)
+   - Writes them to ChromaDB at `data/chroma_db/`
+   - Saves the SHA-256 hash to `data/rules_hash.txt`
+3. Uvicorn starts and the health check passes
+4. The frontend container starts and Nginx begins serving the app
+
+On subsequent restarts, the rules check runs again but skips re-indexing if the hash matches (fast).
+
+### Updating the rules
+
+When Wizards publishes a new rules update, trigger a refresh via the admin endpoint:
+
+```bash
+curl -X POST http://your-nas-ip:3000/api/admin/refresh-rules \
+  -H "X-Admin-Key: your-secret-key-here"
+```
+
+Or restart the backend container — it checks for updates on every start:
+
+```bash
+docker compose restart backend
+```
+
+### Useful commands
+
+```bash
+# View logs
+docker compose logs -f
+
+# Backend logs only
+docker compose logs -f backend
+
+# Stop everything
+docker compose down
+
+# Stop and delete the data volume (full reset — re-indexes on next start)
+docker compose down -v
+
+# Rebuild after code changes
+docker compose up --build -d
+
+# Open a shell in the backend container
+docker compose exec backend sh
+```
+
+### Changing the port
+
+The app is exposed on port `3000` by default. To change it, edit `docker-compose.yml`:
+
+```yaml
+frontend:
+  ports:
+    - "8080:80"   # change 3000 to whatever port you want
+```
+
+### Environment variables in Docker
+
+The backend reads from the `.env` file in the project root via `env_file: .env` in `docker-compose.yml`. Make sure your `.env` exists before running `docker compose up`.
+
+Minimum required:
+
+```env
+ANTHROPIC_API_KEY=sk-ant-...
+VOYAGE_API_KEY=pa-...
+```
