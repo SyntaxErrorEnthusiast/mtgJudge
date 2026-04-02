@@ -31,17 +31,21 @@ def test_get_rules_sorted_naturally():
 
 
 def test_get_rule_by_number_found():
-    # Fetch all rules first to get a valid rule number
-    all_rules = client.get("/rules").json()
-    valid_number = all_rules[10]["rule_number"]  # pick one that exists
-
-    response = client.get(f"/rules/{valid_number}")
+    response = client.get("/rules/100.1")
     assert response.status_code == 200
     data = response.json()
-    assert data["rule_number"].lower() == valid_number.lower()
+    assert data["rule_number"].lower() == "100.1"
     assert "text" in data
 
 
 def test_get_rule_by_number_not_found():
     response = client.get("/rules/999.99z")
     assert response.status_code == 404
+
+
+def test_get_chapter_rule_with_trailing_dot():
+    # Chapter-level rules (e.g. "100.") have a trailing dot and must be accessible
+    response = client.get("/rules/100.")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["rule_number"] == "100."
