@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Routes, Route, NavLink } from 'react-router-dom'
+import { Routes, Route, NavLink, Navigate } from 'react-router-dom'
 import { ChatWindow } from './features/chat/ChatWindow'
 import { RulesPage } from './features/rules/RulesPage'
 import { RequestForm } from './features/requests/RequestForm'
@@ -34,6 +34,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<ChatWindow />} />
         <Route path="/rules" element={<RulesPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
       <button
