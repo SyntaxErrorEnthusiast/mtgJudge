@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
 
 // Regex matching "rule 702.19b" (case-insensitive, captures the number)
@@ -68,11 +69,18 @@ export function Message({ role, text, timestamp, onRuleClick }) {
     minute: '2-digit',
   })
 
+  // Memoize so react-markdown gets a stable components reference —
+  // a new object on every render causes it to unmount/remount the output.
+  const citationComponents = useMemo(
+    () => makeCitationRenderer(onRuleClick),
+    [onRuleClick]
+  )
+
   return (
     <div className={`message message--${role}`}>
       <div className="message__text">
         {role === 'agent' ? (
-          <ReactMarkdown components={makeCitationRenderer(onRuleClick)}>
+          <ReactMarkdown components={citationComponents}>
             {text}
           </ReactMarkdown>
         ) : (
