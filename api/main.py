@@ -26,7 +26,6 @@ from agent.graph import compiled_graph
 from datetime import datetime, timezone, timedelta
 from typing import Optional
 import api.db as _db
-from api.db import get_stats
 
 load_dotenv()
 
@@ -139,7 +138,16 @@ def admin_stats(request: Request):
     groups = request.headers.get("X-Authentik-Groups", "")
     if "authentik Admins" not in groups:
         raise HTTPException(status_code=403, detail="Forbidden")
-    return get_stats()
+    return _db.get_stats()
+
+
+@app.put("/admin/users/{username}/rate-limit", status_code=204)
+def set_user_rate_limit(username: str, body: RateLimitBody, request: Request):
+    """Set a per-user daily rate limit. Admin only."""
+    groups = request.headers.get("X-Authentik-Groups", "")
+    if "authentik Admins" not in groups:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    _db.set_rate_limit(username, body.daily_limit)
 
 
 @app.post("/ask", response_model=AskResponse)

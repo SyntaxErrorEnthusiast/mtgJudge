@@ -211,3 +211,51 @@ def test_ask_admin_is_not_rate_limited():
             }
         )
     assert resp.status_code == 200
+
+
+# --- PUT /admin/users/{username}/rate-limit ---
+
+def test_set_user_rate_limit_returns_204_for_admin():
+    with patch('api.db.set_rate_limit') as mock_set:
+        resp = api_client.put(
+            '/admin/users/alice/rate-limit',
+            json={'daily_limit': 50},
+            headers={
+                'X-Authentik-Username': 'superuser',
+                'X-Authentik-Groups': 'authentik Admins',
+            }
+        )
+    assert resp.status_code == 204
+    mock_set.assert_called_once_with('alice', 50)
+
+
+def test_set_user_rate_limit_returns_403_for_non_admin():
+    resp = api_client.put(
+        '/admin/users/alice/rate-limit',
+        json={'daily_limit': 50},
+        headers={'X-Authentik-Username': 'alice', 'X-Authentik-Groups': ''}
+    )
+    assert resp.status_code == 403
+
+
+# --- GET /admin/stats extension ---
+
+def test_admin_stats_includes_daily_limit_and_avg_per_day():
+    with patch('api.db.get_stats', return_value=[{
+        'username': 'alice',
+        'message_count': 10,
+        'last_seen': '2026-04-06T10:00:00+00:00',
+        'daily_limit': 30,
+        'avg_per_day': 5.0,
+    }]):
+        resp = api_client.get(
+            '/admin/stats',
+            headers={
+                'X-Authentik-Username': 'superuser',
+                'X-Authentik-Groups': 'authentik Admins',
+            }
+        )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data[0]['daily_limit'] == 30
+    assert data[0]['avg_per_day'] == 5.0
