@@ -23,7 +23,10 @@ from natsort import natsorted
 from pydantic import BaseModel
 
 from agent.graph import compiled_graph
-from api.db import log_usage, get_stats
+from datetime import datetime, timezone, timedelta
+from typing import Optional
+import api.db as _db
+from api.db import log_usage, get_stats, get_daily_limit, get_today_count, set_rate_limit
 
 load_dotenv()
 
@@ -34,6 +37,13 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
 logger = logging.getLogger(__name__)
+
+
+def _utc_midnight_tomorrow() -> str:
+    now = datetime.now(timezone.utc)
+    tomorrow = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+    return tomorrow.isoformat()
+
 
 # ---------------------------------------------------------------------------
 # FastAPI app instance
@@ -66,9 +76,21 @@ class AskRequest(BaseModel):
     }
 
 
+class QuotaInfo(BaseModel):
+    used: int
+    limit: Optional[int] = None
+    reset_at: Optional[str] = None
+    is_admin: bool
+
+
 class AskResponse(BaseModel):
     response: str
     retrieved_rules: list[dict] = []
+    quota: Optional[QuotaInfo] = None
+
+
+class RateLimitBody(BaseModel):
+    daily_limit: int
 
 
 class RequestBody(BaseModel):
@@ -93,6 +115,22 @@ def me(request: Request):
     groups = request.headers.get("X-Authentik-Groups", "")
     is_admin = "authentik Admins" in groups
     return {"username": username, "email": email, "is_admin": is_admin}
+
+
+@app.get("/quota", response_model=QuotaInfo)
+def get_quota(request: Request) -> QuotaInfo:
+    """Return the current user's daily quota state."""
+    username = request.headers.get("X-Authentik-Username", "anonymous")
+    groups = request.headers.get("X-Authentik-Groups", "")
+    is_admin = "authentik Admins" in groups
+
+    used = _db.get_today_count(username)
+
+    if is_admin:
+        return QuotaInfo(used=used, limit=None, reset_at=None, is_admin=True)
+
+    limit = _db.get_daily_limit(username)
+    return QuotaInfo(used=used, limit=limit, reset_at=_utc_midnight_tomorrow(), is_admin=False)
 
 
 @app.get("/admin/stats")

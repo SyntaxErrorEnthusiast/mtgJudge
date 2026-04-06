@@ -122,3 +122,43 @@ def test_get_stats_uses_default_limit_when_no_override(db):
     stats = get_stats()
     bob = next(s for s in stats if s['username'] == 'bob')
     assert bob['daily_limit'] == 30
+
+
+# --- GET /quota ---
+
+from unittest.mock import patch
+from fastapi.testclient import TestClient
+from api.main import app
+
+api_client = TestClient(app)
+
+
+def test_quota_returns_used_limit_reset_for_regular_user():
+    with patch('api.db.get_today_count', return_value=5), \
+         patch('api.db.get_daily_limit', return_value=30):
+        resp = api_client.get(
+            '/quota',
+            headers={'X-Authentik-Username': 'alice', 'X-Authentik-Groups': ''}
+        )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data['used'] == 5
+    assert data['limit'] == 30
+    assert data['is_admin'] is False
+    assert data['reset_at'] is not None
+
+
+def test_quota_for_admin_has_no_limit():
+    with patch('api.db.get_today_count', return_value=100):
+        resp = api_client.get(
+            '/quota',
+            headers={
+                'X-Authentik-Username': 'superuser',
+                'X-Authentik-Groups': 'authentik Admins',
+            }
+        )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data['is_admin'] is True
+    assert data['limit'] is None
+    assert data['reset_at'] is None
