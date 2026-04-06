@@ -41,22 +41,21 @@ export function RulesPanel({ rules, activeRule, isOpen, onToggle }) {
 
   return (
     <>
-      {/* Toggle tab — always visible when rules are available */}
-      {hasRules && (
-        <button
-          className="rules-panel__toggle"
-          onClick={onToggle}
-          aria-label={isOpen ? 'Close rules panel' : 'Open rules panel'}
-        >
-          {isOpen ? '<<' : '>>'}
-        </button>
-      )}
-
       {/* Panel — CSS-hidden when closed, not unmounted */}
       <div
         className={`rules-panel ${isOpen ? 'rules-panel--open' : ''}`}
         aria-hidden={!isOpen}
       >
+        {/* Toggle tab — attached to the left edge of the panel */}
+        {hasRules && (
+          <button
+            className="rules-panel__toggle"
+            onClick={onToggle}
+            aria-label={isOpen ? 'Close rules panel' : 'Open rules panel'}
+          >
+            {isOpen ? '>>' : '<<'}
+          </button>
+        )}
         <div className="rules-panel__header">
           <span className="rules-panel__title">Retrieved Rules</span>
         </div>
