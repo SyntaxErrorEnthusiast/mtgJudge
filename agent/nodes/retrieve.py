@@ -36,8 +36,8 @@ def _lookup_by_rule_numbers(collection, rule_references: list[str]) -> list[dict
     Direct lookup for one or more rule numbers.
 
     1. Exact match: collection.get(ids=rule_references)
-    2. Prefix scan: for any ref that had no exact hit, scan all IDs for those
-       starting with "{ref}." (sub-rules) plus the exact ID if present.
+    2. Prefix scan: always scans all IDs for each ref to collect sub-rules (IDs
+       starting with "{ref}."), so e.g. "201" returns "201" AND "201.1", "201.1a".
 
     Returns a deduplicated list of {"rule_number": str, "text": str} dicts,
     or an empty list if nothing matched.
@@ -47,7 +47,6 @@ def _lookup_by_rule_numbers(collection, rule_references: list[str]) -> list[dict
 
     # Step 1: exact lookup
     exact = collection.get(ids=rule_references, include=["metadatas"])
-    matched_ids = set(exact["ids"])
     results = {
         meta["rule_number"]: meta
         for meta in exact["metadatas"]
