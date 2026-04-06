@@ -26,7 +26,7 @@ from agent.graph import compiled_graph
 from datetime import datetime, timezone, timedelta
 from typing import Optional
 import api.db as _db
-from api.db import get_stats, get_daily_limit, get_today_count, set_rate_limit
+from api.db import get_stats
 
 load_dotenv()
 
