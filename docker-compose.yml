@@ -7,7 +7,9 @@ services:
     env_file: .env
     volumes:
       # Persist ChromaDB, SQLite cache, and rules hash across restarts
-      - mtg_data:/app/data
+      - mtg_data:/app/data/chroma_db
+      - mtg_cache:/app/data/cache
+      - mtg_stats:/app/data/stats
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 30s
@@ -28,4 +30,8 @@ services:
 
 volumes:
   mtg_data:
+    driver: local
+  mtg_cache:
+    driver: local
+  mtg_stats:
     driver: local

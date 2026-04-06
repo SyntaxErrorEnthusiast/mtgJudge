@@ -6,11 +6,11 @@ import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 
-_DB_PATH = Path("data/usage.db")
+_DB_PATH = Path("data/stats/usage.db")
 
 
 def _conn() -> sqlite3.Connection:
-    Path("data").mkdir(parents=True, exist_ok=True)
+    Path("data/stats").mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(_DB_PATH))
     conn.execute(
         """

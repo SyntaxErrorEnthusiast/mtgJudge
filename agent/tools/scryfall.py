@@ -26,7 +26,7 @@ _MIN_GAP_SECONDS = 0.2  # 200ms
 # ---------------------------------------------------------------------------
 # Cache constants
 # ---------------------------------------------------------------------------
-_DB_PATH = Path("data/scryfall_cache.db")
+_DB_PATH = Path("data/cache/scryfall_cache.db")
 _CACHE_TTL = 604800  # 7 days in seconds
 
 # ---------------------------------------------------------------------------
@@ -36,8 +36,8 @@ _BASE_URL = "https://api.scryfall.com"
 
 
 def _ensure_db() -> sqlite3.Connection:
-    """Create the data/ directory and the cache DB/schema if needed."""
-    Path("data").mkdir(parents=True, exist_ok=True)
+    """Create the data/cache/ directory and the cache DB/schema if needed."""
+    Path("data/cache").mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(_DB_PATH))
     conn.execute(
         """
