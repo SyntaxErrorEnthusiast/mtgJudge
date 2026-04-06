@@ -65,3 +65,21 @@ describe('InputBar', () => {
     expect(onSend).not.toHaveBeenCalled()
   })
 })
+
+describe('InputBar quota', () => {
+  it('disables input and button when isBlocked is true', () => {
+    render(<InputBar onSend={vi.fn()} isLoading={false} isBlocked={true} quotaLine="Daily limit reached. Resets at midnight UTC." />)
+    expect(screen.getByRole('textbox')).toBeDisabled()
+    expect(screen.getByRole('button')).toBeDisabled()
+  })
+
+  it('shows quota line text when provided', () => {
+    render(<InputBar onSend={vi.fn()} isLoading={false} isBlocked={false} quotaLine="15 / 30 requests used today" />)
+    expect(screen.getByText('15 / 30 requests used today')).toBeDefined()
+  })
+
+  it('does not show quota line when quotaLine is null', () => {
+    render(<InputBar onSend={vi.fn()} isLoading={false} isBlocked={false} quotaLine={null} />)
+    expect(screen.queryByText(/requests used today/i)).toBeNull()
+  })
+})
