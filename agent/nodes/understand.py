@@ -23,7 +23,7 @@ class IntentClassification(BaseModel):
     intent: str = Field(
         description=(
             "The classified intent of the user message. "
-            "Must be one of: rules_question, card_question, combo_question, unclear."
+            "Must be one of: rules_question, card_question, combo_question, unclear, rule_lookup."
         )
     )
     card_names: list[str] = Field(
@@ -58,6 +58,7 @@ Intent categories:
 - rules_question: The user is asking about a specific rule, mechanic, or interaction that does not require knowing a specific card's oracle text.
 - card_question: The user is asking about a specific card's text, abilities, or rulings.
 - combo_question: The user is asking about an interaction or combo between two or more cards.
+- rule_lookup: The user's clear purpose is to retrieve a specific rule by its number. Use this ONLY when the message is essentially a rule number (e.g. "702.10b", "what does rule 302.6 say?"). Do NOT use this when a number appears incidentally in a gameplay question (e.g. "if I have 302 tokens" or "can I do this with 201 life").
 - unclear: The question is ambiguous, incomplete, or cannot be classified without more information.
 
 Entity extraction:
@@ -108,7 +109,7 @@ def understand(state: AgentState) -> dict:
     )
 
     # --- Validate intent domain ---
-    valid_intents = {"rules_question", "card_question", "combo_question", "unclear"}
+    valid_intents = {"rules_question", "card_question", "combo_question", "unclear", "rule_lookup"}
     intent = result.intent if result.intent in valid_intents else "unclear"
 
     # --- Build partial state update ---
