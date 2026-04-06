@@ -3,7 +3,7 @@ api/db.py — SQLite helpers for usage logging.
 """
 
 import sqlite3
-import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 _DB_PATH = Path("data/usage.db")
@@ -17,7 +17,7 @@ def _conn() -> sqlite3.Connection:
         CREATE TABLE IF NOT EXISTS usage_log (
             id        INTEGER PRIMARY KEY AUTOINCREMENT,
             username  TEXT    NOT NULL,
-            ts        INTEGER NOT NULL
+            ts        TEXT    NOT NULL
         )
         """
     )
@@ -30,7 +30,7 @@ def log_usage(username: str) -> None:
     try:
         conn.execute(
             "INSERT INTO usage_log (username, ts) VALUES (?, ?)",
-            (username, int(time.time())),
+            (username, datetime.now(timezone.utc).isoformat()),
         )
         conn.commit()
     finally:
@@ -38,17 +38,17 @@ def log_usage(username: str) -> None:
 
 
 def get_stats() -> list[dict]:
-    """Return message counts per user, descending."""
+    """Return message counts and last seen per user, descending by message count."""
     conn = _conn()
     try:
         rows = conn.execute(
             """
-            SELECT username, COUNT(*) as message_count
+            SELECT username, COUNT(*) as message_count, MAX(ts) as last_seen
             FROM usage_log
             GROUP BY username
             ORDER BY message_count DESC
             """
         ).fetchall()
-        return [{"username": r[0], "message_count": r[1]} for r in rows]
+        return [{"username": r[0], "message_count": r[1], "last_seen": r[2]} for r in rows]
     finally:
         conn.close()

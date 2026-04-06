@@ -20,6 +20,7 @@ export function AdminPage() {
           <tr>
             <th>User</th>
             <th className="text-end">Messages</th>
+            <th className="text-end">Last Seen</th>
           </tr>
         </thead>
         <tbody>
@@ -27,6 +28,11 @@ export function AdminPage() {
             <tr key={row.username}>
               <td>{row.username}</td>
               <td className="text-end">{row.message_count}</td>
+              <td className="text-end">
+                {row.last_seen
+                  ? new Date(row.last_seen).toLocaleString()
+                  : '—'}
+              </td>
             </tr>
           ))}
           {stats.length === 0 && !error && (
