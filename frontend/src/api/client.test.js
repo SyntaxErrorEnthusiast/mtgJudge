@@ -28,7 +28,7 @@ describe('askAgent', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: 'Can I respond to a spell?', format: 'commander', history: [] }),
     })
-    expect(result).toEqual({ response: 'You can respond to a spell.', retrieved_rules: [] })
+    expect(result).toEqual({ response: 'You can respond to a spell.', retrieved_rules: [], quota: null })
   })
 
   it('throws when the response is not ok', async () => {

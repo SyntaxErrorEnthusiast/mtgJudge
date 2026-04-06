@@ -19,7 +19,7 @@ const BASE_URL = ''
  * @param {string} message
  * @param {string} format
  * @param {Array<{role: string, content: string}>} history
- * @returns {Promise<{response: string, retrieved_rules: Array<{rule_number: string, text: string}>}>}
+ * @returns {Promise<{response: string, retrieved_rules: Array<{rule_number: string, text: string}>, quota: {used: number, limit: number|null, reset_at: string|null, is_admin: boolean}|null}>}
  */
 export async function askAgent(message, format = 'commander', history = []) {
   const response = await fetch(`${BASE_URL}/api/ask`, {
@@ -27,6 +27,14 @@ export async function askAgent(message, format = 'commander', history = []) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ message, format, history }),
   })
+
+  if (response.status === 429) {
+    const data = await response.json()
+    const err = new Error('Rate limit exceeded')
+    err.status = 429
+    err.reset_at = data.detail?.reset_at ?? null
+    throw err
+  }
 
   if (!response.ok) {
     throw new Error(`API error: ${response.status}`)
@@ -36,6 +44,7 @@ export async function askAgent(message, format = 'commander', history = []) {
   return {
     response: data.response,
     retrieved_rules: data.retrieved_rules ?? [],
+    quota: data.quota ?? null,
   }
 }
 
@@ -145,4 +154,37 @@ export async function getAdminStats() {
   const response = await fetch(`${BASE_URL}/api/admin/stats`)
   if (!response.ok) throw new Error(`API error: ${response.status}`)
   return response.json()
+}
+
+// ---------------------------------------------------------------------------
+// getQuota — fetch current user's daily quota state
+// ---------------------------------------------------------------------------
+
+/**
+ * GET /api/quota
+ * @returns {Promise<{used: number, limit: number|null, reset_at: string|null, is_admin: boolean}>}
+ */
+export async function getQuota() {
+  const response = await fetch(`${BASE_URL}/api/quota`)
+  if (!response.ok) throw new Error(`API error: ${response.status}`)
+  return response.json()
+}
+
+// ---------------------------------------------------------------------------
+// setUserRateLimit — admin: override daily limit for a specific user
+// ---------------------------------------------------------------------------
+
+/**
+ * PUT /api/admin/users/{username}/rate-limit
+ * @param {string} username
+ * @param {number} dailyLimit
+ * @returns {Promise<void>}
+ */
+export async function setUserRateLimit(username, dailyLimit) {
+  const response = await fetch(`${BASE_URL}/api/admin/users/${encodeURIComponent(username)}/rate-limit`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ daily_limit: dailyLimit }),
+  })
+  if (!response.ok) throw new Error(`API error: ${response.status}`)
 }
