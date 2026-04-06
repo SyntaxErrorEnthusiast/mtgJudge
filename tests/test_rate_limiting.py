@@ -56,3 +56,69 @@ def test_get_today_count_ignores_yesterday(db):
 
     log_usage('alice')  # today
     assert get_today_count('alice') == 1
+
+
+# --- set_rate_limit ---
+
+def test_set_rate_limit_inserts_new_row(db):
+    from api.db import set_rate_limit
+    set_rate_limit('alice', 50)
+    assert get_daily_limit('alice') == 50
+
+
+def test_set_rate_limit_updates_existing_row(db):
+    from api.db import set_rate_limit
+    set_rate_limit('alice', 50)
+    set_rate_limit('alice', 10)
+    assert get_daily_limit('alice') == 10
+
+
+# --- get_avg_requests_per_day ---
+
+def test_get_avg_requests_per_day_returns_zero_with_no_data(db):
+    from api.db import get_avg_requests_per_day
+    assert get_avg_requests_per_day('alice') == 0.0
+
+
+def test_get_avg_requests_per_day_single_day(db):
+    from api.db import get_avg_requests_per_day
+    log_usage('alice')
+    log_usage('alice')
+    log_usage('alice')
+    assert get_avg_requests_per_day('alice') == 3.0
+
+
+def test_get_avg_requests_per_day_multiple_days(db):
+    from api.db import get_avg_requests_per_day
+    yesterday = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
+    conn = db_module._conn()
+    conn.execute("INSERT INTO usage_log (username, ts) VALUES (?, ?)", ('alice', yesterday))
+    conn.execute("INSERT INTO usage_log (username, ts) VALUES (?, ?)", ('alice', yesterday))
+    conn.commit()
+    conn.close()
+    log_usage('alice')  # today: 1 request
+    # 3 total requests across 2 days = 1.5 avg
+    assert get_avg_requests_per_day('alice') == 1.5
+
+
+# --- get_stats extension ---
+
+def test_get_stats_includes_daily_limit_and_avg_per_day(db):
+    from api.db import get_stats, set_rate_limit
+    log_usage('alice')
+    log_usage('alice')
+    set_rate_limit('alice', 40)
+
+    stats = get_stats()
+    alice = next(s for s in stats if s['username'] == 'alice')
+    assert alice['daily_limit'] == 40
+    assert alice['avg_per_day'] == 2.0
+
+
+def test_get_stats_uses_default_limit_when_no_override(db):
+    from api.db import get_stats
+    log_usage('bob')
+
+    stats = get_stats()
+    bob = next(s for s in stats if s['username'] == 'bob')
+    assert bob['daily_limit'] == 30

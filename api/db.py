@@ -47,7 +47,7 @@ def log_usage(username: str) -> None:
 
 
 def get_stats() -> list[dict]:
-    """Return message counts and last seen per user, descending by message count."""
+    """Return per-user message counts, last seen, daily limit, and avg requests per day."""
     conn = _conn()
     try:
         rows = conn.execute(
@@ -58,7 +58,52 @@ def get_stats() -> list[dict]:
             ORDER BY message_count DESC
             """
         ).fetchall()
-        return [{"username": r[0], "message_count": r[1], "last_seen": r[2]} for r in rows]
+    finally:
+        conn.close()
+
+    return [
+        {
+            "username": r[0],
+            "message_count": r[1],
+            "last_seen": r[2],
+            "daily_limit": get_daily_limit(r[0]),
+            "avg_per_day": get_avg_requests_per_day(r[0]),
+        }
+        for r in rows
+    ]
+
+
+def set_rate_limit(username: str, limit: int) -> None:
+    """Set or update the per-user daily request limit."""
+    conn = _conn()
+    try:
+        conn.execute(
+            """
+            INSERT INTO rate_limits (username, daily_limit) VALUES (?, ?)
+            ON CONFLICT(username) DO UPDATE SET daily_limit = excluded.daily_limit
+            """,
+            (username, limit),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_avg_requests_per_day(username: str) -> float:
+    """Return the average number of requests per day for a user."""
+    conn = _conn()
+    try:
+        row = conn.execute(
+            """
+            SELECT
+                CAST(COUNT(*) AS REAL) / COUNT(DISTINCT substr(ts, 1, 10))
+            FROM usage_log
+            WHERE username = ?
+            """,
+            (username,),
+        ).fetchone()
+        val = row[0]
+        return round(val, 2) if val else 0.0
     finally:
         conn.close()
 
