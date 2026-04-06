@@ -9,7 +9,7 @@ class VoyageEmbeddingProvider(EmbeddingProvider):
     """Voyage AI embedding provider using the voyageai SDK."""
 
     def __init__(self) -> None:
-        model = os.environ.get("EMBEDDING_MODEL", "voyage-3")
+        model = os.environ.get("EMBEDDING_MODEL", "voyage-4")
         self._model = model
         self._client = voyageai.Client()
 

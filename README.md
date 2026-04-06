@@ -4,6 +4,31 @@ An AI-powered Magic: The Gathering rules judge. Ask rules questions in plain Eng
 
 ---
 
+## Start here
+
+Everything you need to get MTG Judge running with Docker.
+
+**Prerequisites:** Docker, Docker Compose, an [Anthropic API key](https://console.anthropic.com/), and a [Voyage AI API key](https://www.voyageai.com/).
+
+**1. Create a `.env` file in the project root:**
+
+```env
+ANTHROPIC_API_KEY=sk-ant-...
+VOYAGE_API_KEY=pa-...
+```
+
+**2. Build and start:**
+
+```bash
+docker compose up --build -d
+```
+
+That's it. The backend will automatically download and index the MTG rules on first boot — this takes a few minutes. Once the health check passes, the frontend starts and the app is available at `http://your-server-ip:3000`.
+
+> On subsequent restarts the rules check is instant — it only re-indexes if Wizards has published an update.
+
+---
+
 ## What it does
 
 - Answers MTG rules questions using a self-hosted ChromaDB vector knowledge base built from the official comprehensive rules
