@@ -197,7 +197,7 @@ def test_ask_admin_is_not_rate_limited():
     with patch('api.db.get_today_count', return_value=9999), \
          patch('api.db.get_daily_limit', return_value=30), \
          patch('api.db.log_usage'), \
-         patch('agent.graph.compiled_graph') as mock_graph:
+         patch('api.main.compiled_graph') as mock_graph:
         mock_graph.invoke.return_value = {
             'messages': [type('M', (), {'content': 'ok'})()],
             'retrieved_context': {},
