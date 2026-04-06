@@ -1,8 +1,8 @@
 """
-Scryfall API client with rate limiting (200ms gap) and SQLite caching (24h TTL).
+Scryfall API client with rate limiting (200ms gap) and SQLite caching (7 day TTL).
 
-Cards are cached. Callers are
-responsible for deriving per-format legality from card["legalities"][format].
+Cards are cached.
+Callers are responsible for deriving per-format legality from card["legalities"][format].
 """
 
 import json

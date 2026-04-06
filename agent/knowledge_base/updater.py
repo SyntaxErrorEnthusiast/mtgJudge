@@ -16,8 +16,8 @@ from agent.knowledge_base.indexer import index_chunks
 logger = logging.getLogger(__name__)
 
 _RULES_URL = "https://media.wizards.com/2025/downloads/MagicCompRules%2020250404.txt"
-_HASH_FILE = Path("data/rules_hash.txt")
-_DATA_DIR = Path("data")
+_HASH_FILE = Path("data/chroma_db/rules_hash.txt")
+_DATA_DIR = Path("data/chroma_db")
 
 
 def run() -> None:
