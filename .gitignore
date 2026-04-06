@@ -27,3 +27,6 @@ data/
 .claude/
 .superpowers/
 %USERPROFILE%/
+
+# Local-only design specs and plans
+docs/superpowers/
