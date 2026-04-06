@@ -1,7 +1,7 @@
 """
 reason.py — Answer synthesis node for the MTG Judge pipeline.
 
-Calls Claude Sonnet 4.5 to synthesize a cited answer from retrieved context.
+Calls Claude Sonnet 4.6 to synthesize a cited answer from retrieved context.
 Prepends legality notes for banned/restricted/not_legal cards.
 Stores the result in `draft_answer`.
 """
@@ -28,6 +28,7 @@ Answer using ONLY the retrieved context provided. Do not use outside knowledge.
 - Cite rules using the exact format: rule XXX.Xa (e.g. rule 702.19, rule 100.1a, rule 303.4b). Always include the sub-number — never cite a chapter alone (e.g. never "rule 702", always "rule 702.1" or the specific subrule).
 - Only cite rules that directly answer the question. Do not cite rules that are present in the context but tangential to the answer.
 - If the context does not contain enough information to fully answer, say so clearly.
+- Be direct and concise in your output
 - Do not invent rules or card text not present in the context.
 - Do not include a Sources section — that is built separately.
 </output_format>"""
@@ -38,7 +39,7 @@ def _get_llm() -> ChatAnthropic:
 
 
 # ---------------------------------------------------------------------------
-# Legality note helpers (Requirements 6.3, 6.4, 6.5, 6.6)
+# Legality note helpers
 # ---------------------------------------------------------------------------
 
 def _build_legality_notes(cards: list[dict]) -> str:
@@ -111,7 +112,7 @@ def _format_cards_context(cards: list[dict]) -> str:
 
 def reason(state: AgentState) -> dict:
     """
-    Synthesize an answer from retrieved context using Claude Sonnet 4.5.
+    Synthesize an answer from retrieved context using Claude Sonnet 4.6.
 
     Returns a partial state dict with only `draft_answer`.
     """
@@ -141,7 +142,7 @@ def reason(state: AgentState) -> dict:
             user_question = msg.content if isinstance(msg.content, str) else str(msg.content)
             break
 
-    # --- Call Claude (Requirement 6.1) ---
+    # --- Call Claude ---
     llm = _get_llm()
     response = llm.invoke(
         [
@@ -152,7 +153,7 @@ def reason(state: AgentState) -> dict:
 
     llm_answer = response.content if isinstance(response.content, str) else str(response.content)
 
-    # --- Prepend legality notes (Requirements 6.3, 6.4, 6.5) ---
+    # --- Prepend legality notes ---
     legality_notes = _build_legality_notes(cards)
     if legality_notes:
         draft_answer = f"{legality_notes}\n\n{llm_answer}"

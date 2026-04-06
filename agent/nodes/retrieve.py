@@ -37,8 +37,11 @@ def retrieve(state: AgentState) -> dict:
     fmt = state.get("format", "commander")
     cards = []
     for name in state.get("card_names", []):
-        card = get_card(name, fmt)
+        card = get_card(name)
         if card is not None:
+            # Derive per format legality here
+            card["legality"] = card.get("legalities", {}).get(fmt, "unknown")
+            card["format"] = fmt
             cards.append(card)
         else:
             logger.debug("Card %r not found or ambiguous; omitting from context.", name)

@@ -1,22 +1,14 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useChat } from './useChat'
 import { MessageList } from './MessageList'
 import { InputBar } from './InputBar'
 import { RulesPanel } from '../rules/RulesPanel'
 
 export function ChatWindow() {
-  const { messages, isLoading, sendMessage, currentRetrievedRules } = useChat()
+  const { messages, isLoading, sendMessage, allRetrievedRules } = useChat()
   const [format, setFormat] = useState('commander')
   const [isPanelOpen, setIsPanelOpen] = useState(false)
   const [activeRule, setActiveRule] = useState(null)
-
-  // Close panel when a new answer begins loading
-  useEffect(() => {
-    if (isLoading) {
-      setIsPanelOpen(false)
-      setActiveRule(null)
-    }
-  }, [isLoading])
 
   function handleSend(text) {
     sendMessage(text, format)
@@ -43,7 +35,7 @@ export function ChatWindow() {
       </div>
 
       <RulesPanel
-        rules={currentRetrievedRules}
+        rules={allRetrievedRules}
         activeRule={activeRule}
         isOpen={isPanelOpen}
         onToggle={() => setIsPanelOpen(prev => !prev)}

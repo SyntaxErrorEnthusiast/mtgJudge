@@ -4,7 +4,7 @@ import { askAgent, trackUsage } from '../../api/client'
 export function useChat() {
   const [messages, setMessages] = useState([])
   const [isLoading, setIsLoading] = useState(false)
-  const [currentRetrievedRules, setCurrentRetrievedRules] = useState([])
+  const [allRetrievedRules, setAllRetrievedRules] = useState([])
   const nextIdRef = useRef(0)
 
   function serializeHistory(msgs) {
@@ -29,15 +29,19 @@ export function useChat() {
 
     setMessages(prev => [...prev, userMessage])
     setIsLoading(true)
-    // Reset retrieved rules when a new answer begins loading
-    setCurrentRetrievedRules([])
     trackUsage(timestamp)
 
     try {
       const history = serializeHistory(messages)
       const { response: responseText, retrieved_rules } = await askAgent(text, format, history)
 
-      setCurrentRetrievedRules(retrieved_rules)
+      // Accumulate rules, deduped by rule_number
+      setAllRetrievedRules(prev => {
+        const existingNumbers = new Set(prev.map(r => r.rule_number))
+        const newRules = retrieved_rules.filter(r => !existingNumbers.has(r.rule_number))
+        return [...prev, ...newRules]
+      })
+
       setMessages(prev => [...prev, {
         id: nextIdRef.current++,
         role: 'agent',
@@ -56,5 +60,5 @@ export function useChat() {
     }
   }
 
-  return { messages, isLoading, sendMessage, currentRetrievedRules }
+  return { messages, isLoading, sendMessage, allRetrievedRules }
 }

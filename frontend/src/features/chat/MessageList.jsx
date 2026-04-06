@@ -10,12 +10,18 @@ import { Message } from './Message'
 export function MessageList({ messages, onRuleClick }) {
   const listRef = useRef(null)
   const bottomRef = useRef(null)
+  const prevCountRef = useRef(messages.length)
 
   useEffect(() => {
     const list = listRef.current
     if (!list) return
+
+    const newMessageAdded = messages.length > prevCountRef.current
+    prevCountRef.current = messages.length
+
     const distanceFromBottom = list.scrollHeight - list.scrollTop - list.clientHeight
-    if (distanceFromBottom <= 100) {
+    // Always scroll on a new message; otherwise only scroll if already near the bottom
+    if (newMessageAdded || distanceFromBottom <= 100) {
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
     }
   }, [messages])

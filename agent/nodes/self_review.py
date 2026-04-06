@@ -1,7 +1,7 @@
 """
 self_review.py — Citation verification node for the MTG Judge pipeline.
 
-Calls Claude Sonnet 4.5 to verify that:
+Calls Claude Sonnet 4.6 to verify that:
   - Cited rule numbers appear in the retrieved context
   - The answer does not contradict any retrieved rule text
   - Legality status is correctly stated
@@ -71,7 +71,7 @@ def _get_llm() -> ChatAnthropic:
 
 
 # ---------------------------------------------------------------------------
-# Context formatting (reuse pattern from reason.py)
+# Context formatting
 # ---------------------------------------------------------------------------
 
 def _format_rules_context(rules: list[dict]) -> str:
@@ -140,7 +140,7 @@ def self_review(state: AgentState) -> dict:
         "Verify the draft answer against the retrieved context and return your verdict."
     )
 
-    # --- Call Claude with structured output (Requirement 7.1) ---
+    # --- Call Claude with structured output ---
     llm = _get_llm()
     structured_llm = llm.with_structured_output(ReviewVerdict)
 
@@ -160,7 +160,7 @@ def self_review(state: AgentState) -> dict:
     # --- Build partial state update ---
     update: dict = {"self_review_status": verdict}
 
-    # --- Uncertain path: prepend warning to draft_answer (Requirement 7.7) ---
+    # --- Uncertain path: prepend warning to draft_answer ---
     if verdict == "uncertain":
         update["draft_answer"] = f"{_UNCERTAIN_WARNING}\n\n{draft_answer}"
 

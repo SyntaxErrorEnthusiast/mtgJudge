@@ -96,7 +96,7 @@ def understand(state: AgentState) -> dict:
             user_text = msg.content if isinstance(msg.content, str) else str(msg.content)
             break
 
-    # --- Call Claude with structured output (Requirement 3.1) ---
+    # --- Call Claude with structured output ---
     llm = _get_llm()
     structured_llm = llm.with_structured_output(IntentClassification)
 
@@ -107,7 +107,7 @@ def understand(state: AgentState) -> dict:
         ]
     )
 
-    # --- Validate intent domain (Requirement 3.2) ---
+    # --- Validate intent domain ---
     valid_intents = {"rules_question", "card_question", "combo_question", "unclear"}
     intent = result.intent if result.intent in valid_intents else "unclear"
 
@@ -119,7 +119,7 @@ def understand(state: AgentState) -> dict:
         "pending_response": None,
     }
 
-    # --- Clarifying question path (Requirement 3.4) ---
+    # --- Clarifying question path ---
     if intent == "unclear" and result.clarifying_question:
         update["pending_response"] = result.clarifying_question
 

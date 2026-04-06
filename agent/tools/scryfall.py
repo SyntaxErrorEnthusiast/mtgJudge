@@ -24,7 +24,7 @@ _MIN_GAP_SECONDS = 0.2  # 200ms
 # Cache constants
 # ---------------------------------------------------------------------------
 _DB_PATH = Path("data/scryfall_cache.db")
-_CACHE_TTL = 86400  # 24 hours in seconds
+_CACHE_TTL = 604800  # 7 days in seconds
 
 # ---------------------------------------------------------------------------
 # Scryfall base URL
@@ -84,13 +84,16 @@ def _cache_set(conn: sqlite3.Connection, key: str, data: dict) -> None:
     conn.commit()
 
 
-def get_card(name: str, format: str) -> dict | None:
+def get_card(name: str) -> dict | None:
     """
-    Look up a card by name for the given MTG format.
+    Look up a card by name.
 
     Returns a dict with shape:
-        {name, oracle_text, type_line, legality, format, rulings}
+        {name, oracle_text, type_line, legalities, rulings}
     or None if the card is not found / ambiguous / network error.
+
+    The full legalities dict is stored so a single cache entry covers all formats.
+    Callers should derive legality via card["legalities"].get(format, "unknown").
 
     Cache lookup is performed first; HTTP is only called on a cache miss or
     expired entry.
@@ -102,12 +105,7 @@ def get_card(name: str, format: str) -> dict | None:
         # --- Cache hit ---
         cached = _cache_get(conn, key)
         if cached is not None:
-            # Return cached result with the requested format's legality
-            # (re-use cached data; legality may differ per format so we
-            # re-derive it if the format differs from what was cached)
-            if cached.get("format") == format:
-                return cached
-            # Format differs — fall through to re-fetch so legality is correct
+            return cached
 
         # --- Fetch card ---
         try:
@@ -133,11 +131,6 @@ def get_card(name: str, format: str) -> dict | None:
 
         card_data = resp.json()
         card_id = card_data.get("id")
-        oracle_text = card_data.get("oracle_text", "")
-        type_line = card_data.get("type_line", "")
-        legalities = card_data.get("legalities", {})
-        legality = legalities.get(format, "unknown")
-        card_name = card_data.get("name", name)
 
         # --- Fetch rulings ---
         rulings: list[dict] = []
@@ -156,11 +149,10 @@ def get_card(name: str, format: str) -> dict | None:
 
         # --- Build merged dict ---
         result: dict = {
-            "name": card_name,
-            "oracle_text": oracle_text,
-            "type_line": type_line,
-            "legality": legality,
-            "format": format,
+            "name": card_data.get("name", name),
+            "oracle_text": card_data.get("oracle_text", ""),
+            "type_line": card_data.get("type_line", ""),
+            "legalities": card_data.get("legalities", {}),
             "rulings": rulings,
         }
 
