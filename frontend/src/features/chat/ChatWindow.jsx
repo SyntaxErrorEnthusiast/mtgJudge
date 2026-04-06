@@ -29,7 +29,7 @@ export function ChatWindow() {
           </p>
         </div>
 
-        <MessageList messages={messages} onRuleClick={handleRuleClick} />
+        <MessageList messages={messages} isLoading={isLoading} onRuleClick={handleRuleClick} />
 
         <InputBar onSend={handleSend} isLoading={isLoading} onFormatChange={setFormat} />
       </div>

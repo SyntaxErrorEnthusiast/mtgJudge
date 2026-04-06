@@ -1,13 +1,15 @@
 import { useEffect, useRef } from 'react'
 import { Message } from './Message'
+import { TypingIndicator } from './TypingIndicator'
 
 /**
  * @param {{
  *   messages: Array<{id: number, role: string, text: string, timestamp: string}>,
+ *   isLoading: boolean,
  *   onRuleClick: (ruleNumber: string) => void
  * }} props
  */
-export function MessageList({ messages, onRuleClick }) {
+export function MessageList({ messages, isLoading, onRuleClick }) {
   const listRef = useRef(null)
   const bottomRef = useRef(null)
   const prevCountRef = useRef(messages.length)
@@ -20,11 +22,11 @@ export function MessageList({ messages, onRuleClick }) {
     prevCountRef.current = messages.length
 
     const distanceFromBottom = list.scrollHeight - list.scrollTop - list.clientHeight
-    // Always scroll on a new message; otherwise only scroll if already near the bottom
-    if (newMessageAdded || distanceFromBottom <= 100) {
+    // Always scroll on a new message or when loading starts; otherwise only scroll if near bottom
+    if (newMessageAdded || isLoading || distanceFromBottom <= 100) {
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
     }
-  }, [messages])
+  }, [messages, isLoading])
 
   return (
     <div className="message-list flex-grow-1" ref={listRef}>
@@ -37,6 +39,7 @@ export function MessageList({ messages, onRuleClick }) {
           onRuleClick={onRuleClick}
         />
       ))}
+      {isLoading && <TypingIndicator />}
       <div ref={bottomRef} aria-hidden="true" />
     </div>
   )
