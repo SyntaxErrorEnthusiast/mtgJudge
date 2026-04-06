@@ -18,11 +18,12 @@ import os
 
 import httpx
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from natsort import natsorted
 from pydantic import BaseModel
 
 from agent.graph import compiled_graph
+from api.db import log_usage, get_stats
 
 load_dotenv()
 
@@ -81,37 +82,44 @@ class RequestBody(BaseModel):
 
 @app.get("/health")
 def health_check():
-    """
-    Simple liveness check. Hit this to confirm the server is running.
-    Returns 200 OK with a JSON body.
-    """
     return {"status": "ok"}
 
 
+@app.get("/me")
+def me(request: Request):
+    """Return the current user's identity from Authentik headers."""
+    username = request.headers.get("X-Authentik-Username", "anonymous")
+    email = request.headers.get("X-Authentik-Email", "")
+    groups = request.headers.get("X-Authentik-Groups", "")
+    is_admin = "authentik Admins" in groups
+    return {"username": username, "email": email, "is_admin": is_admin}
+
+
+@app.get("/admin/stats")
+def admin_stats(request: Request):
+    """Return per-user message counts. Admin only."""
+    groups = request.headers.get("X-Authentik-Groups", "")
+    if "authentik Admins" not in groups:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    return get_stats()
+
+
 @app.post("/ask", response_model=AskResponse)
-def ask(request: AskRequest) -> AskResponse:
-    """
-    Send a message to the agent and get a response.
-
-    The agent will:
-      1. Decide if it needs to search the knowledge base
-      2. Decide if it needs to call any external APIs
-      3. Return a final answer
-
-    This is synchronous — the request blocks until the agent finishes.
-    For long-running agents, consider making this async or adding a job queue.
-    """
-    if not request.message.strip():
+def ask(request: Request, body: AskRequest) -> AskResponse:
+    if not body.message.strip():
         raise HTTPException(status_code=400, detail="Message cannot be empty.")
 
-    logger.info("ask: received message (length=%d)", len(request.message))
+    username = request.headers.get("X-Authentik-Username", "anonymous")
+    logger.info("ask: received message from %r (length=%d)", username, len(body.message))
+    log_usage(username)
+
     try:
         from langchain_core.messages import HumanMessage
 
         final_state = compiled_graph.invoke(
             {
-                "messages": [HumanMessage(content=request.message)],
-                "format": request.format,
+                "messages": [HumanMessage(content=body.message)],
+                "format": body.format,
                 "turn_count": 0,
                 "review_retry_count": 0,
                 "intent": "",
@@ -134,7 +142,6 @@ def ask(request: AskRequest) -> AskResponse:
         for r in final_state.get("retrieved_context", {}).get("rules", [])
     ]
     return AskResponse(response=answer, retrieved_rules=retrieved_rules)
-
 
 # ---------------------------------------------------------------------------
 # Run directly for development (alternative to uvicorn CLI)

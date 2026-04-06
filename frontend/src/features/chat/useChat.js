@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { askAgent, trackUsage } from '../../api/client'
+import { askAgent } from '../../api/client'
 
 export function useChat() {
   const [messages, setMessages] = useState([])
@@ -29,7 +29,6 @@ export function useChat() {
 
     setMessages(prev => [...prev, userMessage])
     setIsLoading(true)
-    trackUsage(timestamp)
 
     try {
       const history = serializeHistory(messages)

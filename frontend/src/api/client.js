@@ -118,3 +118,31 @@ export async function submitRequest(data) {
   })
   if (!response.ok) throw new Error(`API error: ${response.status}`)
 }
+
+// ---------------------------------------------------------------------------
+// getMe — fetch current user identity from Authentik headers
+// ---------------------------------------------------------------------------
+
+/**
+ * GET /api/me
+ * @returns {Promise<{username: string, email: string, is_admin: boolean}>}
+ */
+export async function getMe() {
+  const response = await fetch(`${BASE_URL}/api/me`)
+  if (!response.ok) throw new Error(`API error: ${response.status}`)
+  return response.json()
+}
+
+// ---------------------------------------------------------------------------
+// getAdminStats — fetch per-user message counts (admin only)
+// ---------------------------------------------------------------------------
+
+/**
+ * GET /api/admin/stats
+ * @returns {Promise<Array<{username: string, message_count: number}>>}
+ */
+export async function getAdminStats() {
+  const response = await fetch(`${BASE_URL}/api/admin/stats`)
+  if (!response.ok) throw new Error(`API error: ${response.status}`)
+  return response.json()
+}
