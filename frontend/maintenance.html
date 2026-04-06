@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MTG Judge — Maintenance</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0d1117;
+      color: #f0f0f0;
+      font-family: system-ui, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      text-align: center;
+      padding: 2rem;
+    }
+    .card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 3rem 2.5rem;
+      max-width: 480px;
+      width: 100%;
+    }
+    .icon { font-size: 3rem; margin-bottom: 1rem; }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #ffc107;
+      margin-bottom: 0.75rem;
+    }
+    p {
+      color: #8b949e;
+      line-height: 1.6;
+      font-size: 0.95rem;
+    }
+    .retry {
+      display: inline-block;
+      margin-top: 1.75rem;
+      padding: 0.55rem 1.4rem;
+      background: #ffc107;
+      color: #0d1117;
+      font-weight: 700;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+    .retry:hover { background: #ffda6a; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">⚔️</div>
+    <h1>Back in a moment</h1>
+    <p>MTG Judge is currently being updated. We'll be back online shortly — check back in a minute.</p>
+    <a class="retry" href="/">Try again</a>
+  </div>
+</body>
+</html>
