@@ -26,7 +26,7 @@ from agent.graph import compiled_graph
 from datetime import datetime, timezone, timedelta
 from typing import Optional
 import api.db as _db
-from api.db import log_usage, get_stats, get_daily_limit, get_today_count, set_rate_limit
+from api.db import get_stats, get_daily_limit, get_today_count, set_rate_limit
 
 load_dotenv()
 
@@ -148,8 +148,21 @@ def ask(request: Request, body: AskRequest) -> AskResponse:
         raise HTTPException(status_code=400, detail="Message cannot be empty.")
 
     username = request.headers.get("X-Authentik-Username", "anonymous")
+    groups = request.headers.get("X-Authentik-Groups", "")
+    is_admin = "authentik Admins" in groups
+
+    # Rate limit check — admins are exempt
+    if not is_admin:
+        used = _db.get_today_count(username)
+        limit = _db.get_daily_limit(username)
+        if used >= limit:
+            raise HTTPException(
+                status_code=429,
+                detail={"message": "Rate limit exceeded", "reset_at": _utc_midnight_tomorrow()},
+            )
+
     logger.info("ask: received message from %r (length=%d)", username, len(body.message))
-    log_usage(username)
+    _db.log_usage(username)
 
     try:
         from langchain_core.messages import HumanMessage
@@ -179,7 +192,19 @@ def ask(request: Request, body: AskRequest) -> AskResponse:
         {"rule_number": r["rule_number"], "text": r["text"]}
         for r in final_state.get("retrieved_context", {}).get("rules", [])
     ]
-    return AskResponse(response=answer, retrieved_rules=retrieved_rules)
+
+    # Build quota for response (admins get null)
+    quota = None
+    if not is_admin:
+        new_used = _db.get_today_count(username)
+        quota = QuotaInfo(
+            used=new_used,
+            limit=_db.get_daily_limit(username),
+            reset_at=_utc_midnight_tomorrow(),
+            is_admin=False,
+        )
+
+    return AskResponse(response=answer, retrieved_rules=retrieved_rules, quota=quota)
 
 # ---------------------------------------------------------------------------
 # Run directly for development (alternative to uvicorn CLI)

@@ -162,3 +162,51 @@ def test_quota_for_admin_has_no_limit():
     assert data['is_admin'] is True
     assert data['limit'] is None
     assert data['reset_at'] is None
+
+
+# --- POST /ask rate limiting ---
+
+def test_ask_returns_429_when_limit_exceeded():
+    with patch('api.db.get_today_count', return_value=30), \
+         patch('api.db.get_daily_limit', return_value=30), \
+         patch('api.db.log_usage'):
+        resp = api_client.post(
+            '/ask',
+            json={'message': 'test', 'format': 'commander', 'history': []},
+            headers={'X-Authentik-Username': 'alice', 'X-Authentik-Groups': ''}
+        )
+    assert resp.status_code == 429
+
+
+def test_ask_returns_429_detail_with_reset_at():
+    with patch('api.db.get_today_count', return_value=30), \
+         patch('api.db.get_daily_limit', return_value=30), \
+         patch('api.db.log_usage'):
+        resp = api_client.post(
+            '/ask',
+            json={'message': 'test', 'format': 'commander', 'history': []},
+            headers={'X-Authentik-Username': 'alice', 'X-Authentik-Groups': ''}
+        )
+    assert resp.status_code == 429
+    body = resp.json()
+    assert 'reset_at' in body['detail']
+
+
+def test_ask_admin_is_not_rate_limited():
+    """Admin should never get a 429, even if they've used 9999 requests."""
+    with patch('api.db.get_today_count', return_value=9999), \
+         patch('api.db.log_usage'), \
+         patch('agent.graph.compiled_graph') as mock_graph:
+        mock_graph.invoke.return_value = {
+            'messages': [type('M', (), {'content': 'ok'})()],
+            'retrieved_context': {},
+        }
+        resp = api_client.post(
+            '/ask',
+            json={'message': 'test', 'format': 'commander', 'history': []},
+            headers={
+                'X-Authentik-Username': 'superuser',
+                'X-Authentik-Groups': 'authentik Admins',
+            }
+        )
+    assert resp.status_code == 200
