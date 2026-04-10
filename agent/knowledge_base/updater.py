@@ -12,10 +12,10 @@ import httpx
 
 from agent.knowledge_base.parser import parse_rules
 from agent.knowledge_base.indexer import index_chunks
+from agent.knowledge_base.rules_url import get_rules_txt_url
 
 logger = logging.getLogger(__name__)
 
-_RULES_URL = "https://media.wizards.com/2025/downloads/MagicCompRules%2020250404.txt"
 _HASH_FILE = Path("data/chroma_db/rules_hash.txt")
 _DATA_DIR = Path("data/chroma_db")
 
@@ -29,7 +29,8 @@ def run() -> None:
 
     logger.info("Downloading MTG comprehensive rules...")
     try:
-        response = httpx.get(_RULES_URL, follow_redirects=True, timeout=60)
+        rules_url = get_rules_txt_url()
+        response = httpx.get(rules_url, follow_redirects=True, timeout=60)
         response.raise_for_status()
     except Exception as exc:
         logger.error("Failed to download rules: %s", exc)
