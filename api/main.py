@@ -179,7 +179,6 @@ def ask(request: Request, body: AskRequest) -> AskResponse:
             {
                 "messages": [HumanMessage(content=body.message)],
                 "format": body.format,
-                "turn_count": 0,
                 "review_retry_count": 0,
                 "intent": "",
                 "card_names": [],

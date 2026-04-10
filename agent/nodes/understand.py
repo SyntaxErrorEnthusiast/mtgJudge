@@ -2,7 +2,6 @@
 understand.py — Intent classification node for the MTG Judge pipeline.
 
 Classifies the user's intent and extracts card names + rule references.
-Short-circuits to "turn_limit" when turn_count >= 10 without calling the LLM.
 """
 
 from typing import Optional
@@ -82,13 +81,6 @@ def understand(state: AgentState) -> dict:
 
     Returns a partial state dict with only the fields this node modifies.
     """
-    # --- Turn limit short-circuit (Requirement 3.5, 4.1) ---
-    if state.get("turn_count", 0) >= 10:
-        return {
-            "intent": "turn_limit",
-            "pending_response": None,
-        }
-
     # --- Extract the latest human message ---
     messages = state.get("messages", [])
     user_text = ""

@@ -21,9 +21,9 @@ load_dotenv()
 # ---------------------------------------------------------------------------
 
 def _route_after_understand(state: AgentState) -> str:
-    """Route to respond for turn_limit or unclear intent; otherwise retrieve."""
+    """Route to respond for unclear intent; otherwise retrieve."""
     intent = state.get("intent", "")
-    if intent in ("turn_limit", "unclear"):
+    if intent == "unclear":
         return "respond"
     return "retrieve"
 
@@ -103,7 +103,7 @@ def build_graph():
 compiled_graph = build_graph()
 
 
-def run_agent(user_message: str, format: str = "commander", turn_count: int = 0) -> str:
+def run_agent(user_message: str, format: str = "commander") -> str:
     """
     Run the agent with a single user message and return the final text response.
     review_retry_count is always reset to 0 at invocation start.
@@ -114,7 +114,6 @@ def run_agent(user_message: str, format: str = "commander", turn_count: int = 0)
         {
             "messages": [HumanMessage(content=user_message)],
             "format": format,
-            "turn_count": turn_count,
             "review_retry_count": 0,  # reset each invocation
             "intent": "",
             "card_names": [],
