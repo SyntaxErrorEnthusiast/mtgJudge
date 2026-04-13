@@ -6,6 +6,7 @@ then stores the merged results in `retrieved_context`.
 """
 
 import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 import chromadb
@@ -36,8 +37,8 @@ def _lookup_by_rule_numbers(collection, rule_references: list[str]) -> list[dict
     Direct lookup for one or more rule numbers.
 
     1. Exact match: collection.get(ids=rule_references)
-    2. Prefix scan: always scans all IDs for each ref to collect sub-rules (IDs
-       starting with "{ref}."), so e.g. "201" returns "201" AND "201.1", "201.1a".
+    2. Prefix scan: uses ChromaDB `where` filter to avoid loading all metadata.
+       Fetches sub-rules (IDs starting with "{ref}.") for each ref.
 
     Returns a deduplicated list of {"rule_number": str, "text": str} dicts,
     or an empty list if nothing matched.
@@ -52,16 +53,24 @@ def _lookup_by_rule_numbers(collection, rule_references: list[str]) -> list[dict
         for meta in exact["metadatas"]
     }
 
-    # Step 2: prefix scan for sub-rules (always run, not just for unmatched refs)
-    # e.g. querying "201" should also return "201.1", "201.1a", etc.
-    all_data = collection.get(include=["metadatas"])
-    all_metas = all_data["metadatas"]
+    # Step 2: prefix scan using where filter — avoids loading all metadata
     for ref in rule_references:
         prefix = ref + "."
-        for meta in all_metas:
-            rn = meta["rule_number"]
-            if rn.startswith(prefix):
-                results[rn] = meta
+        try:
+            sub = collection.get(
+                where={"rule_number": {"$gte": prefix, "$lt": prefix[:-1] + chr(ord(prefix[-2]) + 1)}},
+                include=["metadatas"],
+            )
+            for meta in sub["metadatas"]:
+                results[meta["rule_number"]] = meta
+        except Exception:
+            # ChromaDB where filters may not support range on all versions; fall back to full scan
+            all_data = collection.get(include=["metadatas"])
+            for meta in all_data["metadatas"]:
+                rn = meta["rule_number"]
+                if rn.startswith(prefix):
+                    results[rn] = meta
+            break  # one fallback covers all refs
 
     return [
         {"rule_number": m["rule_number"], "text": m["text"]}
@@ -103,17 +112,27 @@ def retrieve(state: AgentState) -> dict:
     else:
         rules = rules_search_fn(query, k=6)
 
-    # --- Card retrieval ---
+    # --- Card retrieval (parallel) ---
     fmt = state.get("format", "commander")
+    card_names = state.get("card_names", [])
     cards = []
-    for name in state.get("card_names", []):
-        card = get_card(name)
-        if card is not None:
-            card["legality"] = card.get("legalities", {}).get(fmt, "unknown")
-            card["format"] = fmt
-            cards.append(card)
-        else:
+
+    if card_names:
+        def _fetch(name: str) -> dict | None:
+            card = get_card(name)
+            if card is not None:
+                card["legality"] = card.get("legalities", {}).get(fmt, "unknown")
+                card["format"] = fmt
+                return card
             logger.debug("Card %r not found or ambiguous; omitting from context.", name)
+            return None
+
+        with ThreadPoolExecutor(max_workers=min(len(card_names), 4)) as executor:
+            futures = {executor.submit(_fetch, name): name for name in card_names}
+            for future in as_completed(futures):
+                result = future.result()
+                if result is not None:
+                    cards.append(result)
 
     return {
         "retrieved_context": {

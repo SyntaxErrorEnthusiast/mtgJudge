@@ -10,6 +10,7 @@ import logging
 import sqlite3
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 import httpx
@@ -110,11 +111,25 @@ def get_card(name: str) -> dict | None:
         if cached is not None:
             return cached
 
-        # --- Fetch card ---
+        # --- Fetch card and rulings in parallel ---
+        card_data: dict = {}
+        rulings: list[dict] = []
+
+        def _fetch_card():
+            try:
+                resp = _rate_limited_get(f"{_BASE_URL}/cards/named", params={"fuzzy": name})
+                return resp
+            except Exception as exc:
+                logger.error("Network error fetching card %r: %s", name, exc)
+                return None
+
         try:
-            resp = _rate_limited_get(f"{_BASE_URL}/cards/named", params={"fuzzy": name})
+            resp = _fetch_card()
         except Exception as exc:
             logger.error("Network error fetching card %r: %s", name, exc)
+            return None
+
+        if resp is None:
             return None
 
         if resp.status_code == 404:
@@ -135,20 +150,24 @@ def get_card(name: str) -> dict | None:
         card_data = resp.json()
         card_id = card_data.get("id")
 
-        # --- Fetch rulings ---
+        # --- Fetch rulings in parallel with a second thread ---
         rulings: list[dict] = []
         if card_id:
-            try:
-                rulings_resp = _rate_limited_get(f"{_BASE_URL}/cards/{card_id}/rulings")
-                if rulings_resp.is_success:
-                    rulings_data = rulings_resp.json().get("data", [])
-                    rulings = [
-                        {"date": r.get("published_at", ""), "comment": r.get("comment", "")}
-                        for r in rulings_data
-                    ]
-            except Exception as exc:
-                logger.error("Network error fetching rulings for %r: %s", name, exc)
-                # Continue with empty rulings rather than failing entirely
+            def _fetch_rulings():
+                try:
+                    rulings_resp = _rate_limited_get(f"{_BASE_URL}/cards/{card_id}/rulings")
+                    if rulings_resp.is_success:
+                        return [
+                            {"date": r.get("published_at", ""), "comment": r.get("comment", "")}
+                            for r in rulings_resp.json().get("data", [])
+                        ]
+                except Exception as exc:
+                    logger.error("Network error fetching rulings for %r: %s", name, exc)
+                return []
+
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(_fetch_rulings)
+                rulings = future.result()
 
         # --- Build merged dict ---
         result: dict = {

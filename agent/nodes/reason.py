@@ -34,8 +34,14 @@ Answer using ONLY the retrieved context provided. Do not use outside knowledge.
 </output_format>"""
 
 
+_llm: ChatAnthropic | None = None
+
+
 def _get_llm() -> ChatAnthropic:
-    return ChatAnthropic(model="claude-sonnet-4-6", temperature=0, max_tokens=1024)
+    global _llm
+    if _llm is None:
+        _llm = ChatAnthropic(model="claude-sonnet-4-6", temperature=0, max_tokens=1024)
+    return _llm
 
 
 # ---------------------------------------------------------------------------
