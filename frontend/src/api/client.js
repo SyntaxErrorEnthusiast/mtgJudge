@@ -21,8 +21,73 @@ const BASE_URL = ''
  * @param {Array<{role: string, content: string}>} history
  * @returns {Promise<{response: string, retrieved_rules: Array<{rule_number: string, text: string}>, quota: {used: number, limit: number|null, reset_at: string|null, is_admin: boolean}|null}>}
  */
-export async function askAgent(message, format = 'commander', history = []) {
-  const response = await fetch(`${BASE_URL}/api/ask`, {
+/**
+ * POST /api/ask/stream — SSE streaming version of askAgent.
+ *
+ * Calls onStep(stepName) as each pipeline node starts.
+ * Calls onToken(token) for each streamed text chunk from the reason node.
+ * Resolves with { retrieved_rules, quota } when done.
+ *
+ * @param {string} message
+ * @param {string} format
+ * @param {Array} history
+ * @param {{ onStep: (step: string) => void, onToken: (token: string) => void }} callbacks
+ * @returns {Promise<{ retrieved_rules: Array, quota: object|null }>}
+ */
+export async function askAgentStream(message, format = 'commander', history = [], { onStep, onToken } = {}) {
+  const response = await fetch(`${BASE_URL}/api/ask/stream`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message, format, history }),
+  })
+
+  if (response.status === 429) {
+    const data = await response.json()
+    const err = new Error('Rate limit exceeded')
+    err.status = 429
+    err.reset_at = data.detail?.reset_at ?? null
+    throw err
+  }
+
+  if (!response.ok) {
+    throw new Error(`API error: ${response.status}`)
+  }
+
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    buffer += decoder.decode(value, { stream: true })
+
+    // SSE messages are separated by double newlines
+    const parts = buffer.split('\n\n')
+    buffer = parts.pop() // keep incomplete last chunk
+
+    for (const part of parts) {
+      const lines = part.trim().split('\n')
+      let eventType = 'message'
+      let dataLine = ''
+      for (const line of lines) {
+        if (line.startsWith('event: ')) eventType = line.slice(7)
+        else if (line.startsWith('data: ')) dataLine = line.slice(6)
+      }
+      if (!dataLine) continue
+      const payload = JSON.parse(dataLine)
+
+      if (eventType === 'step') onStep?.(payload.step)
+      else if (eventType === 'token') onToken?.(payload.token)
+      else if (eventType === 'done') return { retrieved_rules: payload.retrieved_rules ?? [], quota: payload.quota ?? null }
+      else if (eventType === 'error') throw new Error(payload.message)
+    }
+  }
+
+  return { retrieved_rules: [], quota: null }
+}
+
+export async function askAgent(message, format = 'commander', history = []) {  const response = await fetch(`${BASE_URL}/api/ask`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ message, format, history }),

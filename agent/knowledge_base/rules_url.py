@@ -53,14 +53,15 @@ def get_rules_txt_url() -> str:
 def _probe_recent_rules_url() -> str | None:
     """Try recent MagicCompRules URLs and return the first that responds 200.
 
-    Rules are released a few times a year, so we probe weekly going back 6 months.
+    Rules are released a few times a year. We probe daily going back 12 months
+    to avoid missing releases that fall between weekly intervals.
     """
     from datetime import datetime, timezone, timedelta
 
     base = "https://media.wizards.com/{year}/downloads/MagicCompRules%20{date}.txt"
     today = datetime.now(timezone.utc)
-    for weeks_ago in range(0, 26):
-        candidate_date = today - timedelta(weeks=weeks_ago)
+    for days_ago in range(0, 365):
+        candidate_date = today - timedelta(days=days_ago)
         url = base.format(
             year=candidate_date.year,
             date=candidate_date.strftime("%Y%m%d"),

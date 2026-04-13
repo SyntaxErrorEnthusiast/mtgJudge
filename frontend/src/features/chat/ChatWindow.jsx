@@ -6,7 +6,7 @@ import { InputBar } from './InputBar'
 import { RulesPanel } from '../rules/RulesPanel'
 
 export function ChatWindow() {
-  const { messages, isLoading, sendMessage, allRetrievedRules } = useChat()
+  const { messages, isLoading, currentStep, sendMessage, allRetrievedRules } = useChat()
   const { quota, isBlocked, updateFromAskResponse } = useQuota()
   const [format, setFormat] = useState('commander')
   const [isPanelOpen, setIsPanelOpen] = useState(false)
@@ -38,7 +38,7 @@ export function ChatWindow() {
           </p>
         </div>
 
-        <MessageList messages={messages} isLoading={isLoading} onRuleClick={handleRuleClick} />
+        <MessageList messages={messages} isLoading={isLoading} currentStep={currentStep} onRuleClick={handleRuleClick} />
 
         <InputBar
           onSend={handleSend}

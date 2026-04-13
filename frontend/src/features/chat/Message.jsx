@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 // Regex matching "rule 702.19b" (case-insensitive, captures the number)
 const RULE_CITATION_RE = /rule (\d+\.\d+[a-z]?)/i
@@ -61,9 +62,11 @@ function linkifyCitations(text, onRuleClick, keyBase) {
 }
 
 /**
- * @param {{ role: string, text: string, timestamp: string, onRuleClick: (ruleNumber: string) => void }} props
+ * @param {{ role: string, text: string, timestamp: string, streaming?: boolean, onRuleClick: (ruleNumber: string) => void }} props
  */
-export function Message({ role, text, timestamp, onRuleClick }) {
+export function Message({ role, text, timestamp, streaming, onRuleClick }) {
+  // Don't render the placeholder bubble until tokens start arriving
+  if (streaming && !text) return null
   const formattedTime = new Date(timestamp).toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit',
@@ -80,7 +83,7 @@ export function Message({ role, text, timestamp, onRuleClick }) {
     <div className={`message message--${role}`}>
       <div className="message__text">
         {role === 'agent' ? (
-          <ReactMarkdown components={citationComponents}>
+          <ReactMarkdown components={citationComponents} remarkPlugins={[remarkGfm]}>
             {text}
           </ReactMarkdown>
         ) : (

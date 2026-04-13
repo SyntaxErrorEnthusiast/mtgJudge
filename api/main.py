@@ -15,16 +15,18 @@ Docs: https://fastapi.tiangolo.com/
 
 import logging
 import os
+import json
 
 import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import StreamingResponse
 from natsort import natsorted
 from pydantic import BaseModel
 
 from agent.graph import compiled_graph
 from datetime import datetime, timezone, timedelta
-from typing import Optional
+from typing import Optional, AsyncGenerator
 import api.db as _db
 
 load_dotenv()
@@ -148,6 +150,110 @@ def set_user_rate_limit(username: str, body: RateLimitBody, request: Request):
     if "authentik Admins" not in groups:
         raise HTTPException(status_code=403, detail="Forbidden")
     _db.set_rate_limit(username, body.daily_limit)
+
+
+@app.post("/ask/stream")
+async def ask_stream(request: Request, body: AskRequest):
+    """
+    SSE endpoint that streams agent progress and the final answer.
+
+    Event types:
+      - step:   {"step": "understand"|"retrieve"|"reason"|"self_review"|"respond"}
+      - token:  {"token": "..."}   (streamed tokens from the reason node)
+      - done:   {"retrieved_rules": [...], "quota": {...}|null}
+      - error:  {"message": "..."}
+    """
+    if not body.message.strip():
+        raise HTTPException(status_code=400, detail="Message cannot be empty.")
+
+    username = request.headers.get("X-Authentik-Username", "anonymous")
+    groups = request.headers.get("X-Authentik-Groups", "")
+    is_admin = "authentik Admins" in groups
+
+    if not is_admin:
+        used = _db.get_today_count(username)
+        limit = _db.get_daily_limit(username)
+        if used >= limit:
+            raise HTTPException(
+                status_code=429,
+                detail={"message": "Rate limit exceeded", "reset_at": _utc_midnight_tomorrow()},
+            )
+
+    _db.log_usage(username)
+
+    from langchain_core.messages import HumanMessage
+
+    initial_state = {
+        "messages": [HumanMessage(content=body.message)],
+        "format": body.format,
+        "review_retry_count": 0,
+        "intent": "",
+        "card_names": [],
+        "rule_references": [],
+        "pending_response": None,
+        "retrieved_context": {},
+        "draft_answer": None,
+        "self_review_status": None,
+    }
+
+    # Node names → human-readable step labels
+    _STEP_LABELS = {
+        "understand": "understand",
+        "retrieve": "retrieve",
+        "reason": "reason",
+        "reason_retry": "reason",
+        "self_review": "self_review",
+        "respond": "respond",
+    }
+
+    async def event_generator() -> AsyncGenerator[str, None]:
+        def _sse(event: str, data: dict) -> str:
+            return f"event: {event}\ndata: {json.dumps(data)}\n\n"
+
+        try:
+            final_state = None
+            async for event in compiled_graph.astream_events(initial_state, version="v2"):
+                kind = event["event"]
+                name = event.get("name", "")
+
+                # Node started → emit step
+                if kind == "on_chain_start" and name in _STEP_LABELS:
+                    yield _sse("step", {"step": _STEP_LABELS[name]})
+
+                # LLM tokens from the reason node → stream them
+                elif kind == "on_chat_model_stream" and event.get("metadata", {}).get("langgraph_node") in ("reason", "reason_retry"):
+                    chunk = event["data"].get("chunk")
+                    if chunk and hasattr(chunk, "content") and isinstance(chunk.content, str):
+                        yield _sse("token", {"token": chunk.content})
+
+                # Graph finished → capture final state
+                elif kind == "on_chain_end" and name == "LangGraph":
+                    final_state = event["data"].get("output")
+
+            # Emit done with rules + quota
+            retrieved_rules = []
+            quota_data = None
+            if final_state:
+                retrieved_rules = [
+                    {"rule_number": r["rule_number"], "text": r["text"]}
+                    for r in final_state.get("retrieved_context", {}).get("rules", [])
+                ]
+                if not is_admin:
+                    new_used = _db.get_today_count(username)
+                    quota_data = {
+                        "used": new_used,
+                        "limit": _db.get_daily_limit(username),
+                        "reset_at": _utc_midnight_tomorrow(),
+                        "is_admin": False,
+                    }
+
+            yield _sse("done", {"retrieved_rules": retrieved_rules, "quota": quota_data})
+
+        except Exception as exc:
+            logger.exception("ask_stream: agent raised an exception")
+            yield _sse("error", {"message": str(exc)})
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
 @app.post("/ask", response_model=AskResponse)

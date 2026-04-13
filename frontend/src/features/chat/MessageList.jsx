@@ -4,12 +4,13 @@ import { TypingIndicator } from './TypingIndicator'
 
 /**
  * @param {{
- *   messages: Array<{id: number, role: string, text: string, timestamp: string}>,
+ *   messages: Array<{id: number, role: string, text: string, timestamp: string, streaming?: boolean}>,
  *   isLoading: boolean,
+ *   currentStep: string|null,
  *   onRuleClick: (ruleNumber: string) => void
  * }} props
  */
-export function MessageList({ messages, isLoading, onRuleClick }) {
+export function MessageList({ messages, isLoading, currentStep, onRuleClick }) {
   const listRef = useRef(null)
   const bottomRef = useRef(null)
   const prevCountRef = useRef(messages.length)
@@ -22,11 +23,14 @@ export function MessageList({ messages, isLoading, onRuleClick }) {
     prevCountRef.current = messages.length
 
     const distanceFromBottom = list.scrollHeight - list.scrollTop - list.clientHeight
-    // Always scroll on a new message or when loading starts; otherwise only scroll if near bottom
     if (newMessageAdded || isLoading || distanceFromBottom <= 100) {
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
     }
   }, [messages, isLoading])
+
+  // Show TypingIndicator only while loading and before any tokens have arrived
+  const streamingMsg = messages.find(m => m.streaming)
+  const showTypingIndicator = isLoading && (!streamingMsg || streamingMsg.text === '')
 
   return (
     <div className="message-list flex-grow-1" ref={listRef}>
@@ -36,10 +40,11 @@ export function MessageList({ messages, isLoading, onRuleClick }) {
           role={msg.role}
           text={msg.text}
           timestamp={msg.timestamp}
+          streaming={msg.streaming}
           onRuleClick={onRuleClick}
         />
       ))}
-      {isLoading && <TypingIndicator />}
+      {showTypingIndicator && <TypingIndicator step={currentStep} />}
       <div ref={bottomRef} aria-hidden="true" />
     </div>
   )
