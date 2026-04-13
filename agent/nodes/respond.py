@@ -1,9 +1,6 @@
 """
 respond.py — Final response node for the MTG Judge pipeline.
 
-Appends the appropriate AIMessage to the conversation and increments
-turn_count on normal and clarifying-question paths.
-
 On the normal path, appends a deterministic ## Sources block built from
 cited rule numbers and all retrieved card data.
 """
@@ -13,10 +10,6 @@ import re
 from langchain_core.messages import AIMessage
 
 from agent.state import AgentState
-
-TURN_LIMIT_MESSAGE = (
-    "This conversation has reached its limit — please start a new chat to continue."
-)
 
 _RULE_CITATION_RE = re.compile(r"rule (\d+\.\d+[a-z]?)", re.IGNORECASE)
 
@@ -73,12 +66,11 @@ def _build_sources_block(draft_answer: str, retrieved_context: dict) -> str:
 
 def respond(state: AgentState) -> dict:
     """
-    Emit the final AIMessage and update turn_count.
+    Emit the final AIMessage.
 
     Paths:
-    - turn_limit: append hardcoded limit message; do NOT increment turn_count
-    - unclear + pending_response set: append pending_response; increment turn_count
-    - normal: append draft_answer + Sources block; increment turn_count
+    - unclear + pending_response set: append pending_response
+    - normal: append draft_answer + Sources block
     """
     intent = state.get("intent", "")
 
@@ -86,7 +78,6 @@ def respond(state: AgentState) -> dict:
     if intent == "unclear" and state.get("pending_response"):
         return {
             "messages": [AIMessage(content=state["pending_response"])],
-            "turn_count": state.get("turn_count", 0) + 1,
         }
 
     # --- Normal path ---
@@ -96,5 +87,4 @@ def respond(state: AgentState) -> dict:
 
     return {
         "messages": [AIMessage(content=draft + sources_block)],
-        "turn_count": state.get("turn_count", 0) + 1,
     }

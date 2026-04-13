@@ -82,7 +82,6 @@ def index_chunks(chunks: list[RuleChunk]) -> None:
     except Exception:
         pass
 
-    client.get_collection(_TEMP_COLLECTION_NAME)
     # ChromaDB doesn't have a rename — recreate under canonical name
     final_collection = client.create_collection(
         name=_COLLECTION_NAME,

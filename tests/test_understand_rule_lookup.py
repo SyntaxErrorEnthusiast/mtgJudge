@@ -7,7 +7,6 @@ from agent.nodes.understand import understand, IntentClassification
 def _state(text: str) -> dict:
     return {
         "messages": [HumanMessage(content=text)],
-        "turn_count": 0,
     }
 
 

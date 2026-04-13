@@ -87,7 +87,6 @@ def test_clarifying_question_path_no_sources_block():
         intent="unclear",
         pending_response="Could you clarify which cards are involved?",
         retrieved_context={"rules": SAMPLE_RULES, "cards": SAMPLE_CARDS},
-        turn_count=0,
         draft_answer="",
     )
     from agent.nodes.respond import respond

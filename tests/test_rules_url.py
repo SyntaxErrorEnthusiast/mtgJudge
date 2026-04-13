@@ -33,7 +33,8 @@ def test_get_rules_txt_url_returns_txt_link():
 
 
 def test_get_rules_txt_url_raises_when_no_link_found():
-    with patch("agent.knowledge_base.rules_url.httpx.get") as mock_get:
+    with patch("agent.knowledge_base.rules_url.httpx.get") as mock_get, \
+         patch("agent.knowledge_base.rules_url._probe_recent_rules_url", return_value=None):
         mock_get.return_value = _mock_response(_FAKE_HTML_NO_LINK)
         with pytest.raises(RuntimeError, match="Could not find"):
             get_rules_txt_url()

@@ -10,7 +10,7 @@ import logging
 import sqlite3
 import threading
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import httpx
@@ -111,20 +111,9 @@ def get_card(name: str) -> dict | None:
         if cached is not None:
             return cached
 
-        # --- Fetch card and rulings in parallel ---
-        card_data: dict = {}
-        rulings: list[dict] = []
-
-        def _fetch_card():
-            try:
-                resp = _rate_limited_get(f"{_BASE_URL}/cards/named", params={"fuzzy": name})
-                return resp
-            except Exception as exc:
-                logger.error("Network error fetching card %r: %s", name, exc)
-                return None
-
+        # --- Fetch card ---
         try:
-            resp = _fetch_card()
+            resp = _rate_limited_get(f"{_BASE_URL}/cards/named", params={"fuzzy": name})
         except Exception as exc:
             logger.error("Network error fetching card %r: %s", name, exc)
             return None
