@@ -16,7 +16,7 @@ class AgentState(TypedDict):
     intent: str                 # "rules_question" | "card_question" | "combo_question" | "unclear" | "rule_lookup"
     card_names: list            # extracted card names from understand node
     rule_references: list       # extracted rule refs from understand node
-    pending_response: str       # pre-written response (clarifying question or turn limit msg)
+    pending_response: str       # pre-written response
     retrieved_context: dict     # merged rules + card context from retrieve node
     draft_answer: str           # answer from reason node, reviewed by self_review
     self_review_status: str     # "approved" | "needs_fix" | "uncertain"

@@ -82,13 +82,6 @@ def respond(state: AgentState) -> dict:
     """
     intent = state.get("intent", "")
 
-    # --- Turn-limit path ---
-    if intent == "turn_limit":
-        return {
-            "messages": [AIMessage(content=TURN_LIMIT_MESSAGE)],
-            "turn_count": state.get("turn_count", 0),
-        }
-
     # --- Clarifying question path ---
     if intent == "unclear" and state.get("pending_response"):
         return {

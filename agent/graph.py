@@ -4,7 +4,7 @@ graph.py — Build the LangGraph agent graph.
 Five-node pipeline:
   understand → retrieve → reason → self_review → respond
 
-Conditional edges handle turn limits, unclear intent, and self-review retries.
+Conditional edges handle unclear intent, and self-review retries.
 """
 
 from dotenv import load_dotenv
