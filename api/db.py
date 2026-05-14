@@ -55,7 +55,7 @@ def get_stats() -> list[dict]:
             SELECT username, COUNT(*) as message_count, MAX(ts) as last_seen
             FROM usage_log
             GROUP BY username
-            ORDER BY message_count DESC
+            ORDER BY last_seen DESC
             """
         ).fetchall()
     finally:
