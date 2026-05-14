@@ -46,6 +46,8 @@ class IntentClassification(BaseModel):
 # LLM setup
 # ---------------------------------------------------------------------------
 
+_OFF_TOPIC_MESSAGE = "I'm only able to answer Magic: The Gathering rules questions. Please ask me something about MTG!"
+
 _SYSTEM_PROMPT = """<instructions>
 You are an expert Magic: The Gathering rules judge assistant.
 
@@ -58,12 +60,13 @@ Intent categories:
 - card_question: The user is asking about a specific card's text, abilities, or rulings.
 - combo_question: The user is asking about an interaction or combo between two or more cards.
 - rule_lookup: The user's clear purpose is to retrieve a specific rule by its number. Use this ONLY when the message is essentially a rule number (e.g. "702.10b", "what does rule 302.6 say?"). Do NOT use this when a number appears incidentally in a gameplay question (e.g. "if I have 302 tokens" or "can I do this with 201 life").
-- unclear: The question is ambiguous, incomplete, not related to Magic: The Gathering, or cannot be classified without more information.
+- off_topic: The question has nothing to do with Magic: The Gathering (e.g. cooking, sports, coding, general knowledge).
+- unclear: The question is about MTG but is ambiguous or incomplete and needs clarification.
 
 Entity extraction:
 - card_names: Any Magic card names mentioned (use the exact name as written by the user).
 - rule_references: Any rule numbers mentioned (e.g. "702.19", "100.1a", "rule 303.4").
-- clarifying_question: When intent is "unclear" — if the question is off-topic (not about MTG), politely explain you only answer Magic: The Gathering rules questions. If the question is ambiguous MTG-related, ask a short clarifying question. Always provide this field when intent is "unclear".
+- clarifying_question: Only when intent is "unclear" — write a short question to clarify what the user needs. Leave null for all other intents.
 </context>"""
 
 
@@ -107,7 +110,7 @@ def understand(state: AgentState) -> dict:
     )
 
     # --- Validate intent domain ---
-    valid_intents = {"rules_question", "card_question", "combo_question", "unclear", "rule_lookup"}
+    valid_intents = {"rules_question", "card_question", "combo_question", "unclear", "rule_lookup", "off_topic"}
     intent = result.intent if result.intent in valid_intents else "unclear"
 
     # --- Build partial state update ---
@@ -118,11 +121,14 @@ def understand(state: AgentState) -> dict:
         "pending_response": None,
     }
 
-    # --- Clarifying question path ---
-    if intent == "unclear":
-        update["pending_response"] = (
-            result.clarifying_question
-            or "I can only help with Magic: The Gathering rules questions. Could you ask something about MTG?"
-        )
+    # --- Off-topic: always use the hardcoded message ---
+    if intent == "off_topic":
+        update["intent"] = "unclear"  # reuse the unclear path in respond
+        update["pending_response"] = _OFF_TOPIC_MESSAGE
+
+    # --- Ambiguous MTG question: use clarifying question or fallback ---
+    elif intent == "unclear":
+        clarifying = (result.clarifying_question or "").strip()
+        update["pending_response"] = clarifying or "Could you clarify your Magic: The Gathering question?"
 
     return update
